@@ -10,6 +10,452 @@
 \tableofcontents
 \newpage
 
+\section{Concetti base}
+Tipi di learning: in base ai dati che vengono dati in input all'algoritmo di machine learning si possono sfruttare più strategie di apprendimento.
+
+\begin{definizione}{Metodi di learning}
+	Dati un insieme di dati $ \mathcal{D}_n $ detto \textit{training set}, dove $ X $ è l'insieme contenente tutte le possibile features e $ Y $ è l'insieme di tutte le possibili labels, allora abbiamo i seguenti tipi di learning:
+	\begin{itemize}
+		\item Supervised learning: vengono forniti dati etichettati, ossia ogni dato di input $ x_i $ ha una label $ y_i $ associatata
+		      \[
+			      \mathcal{D}_{n} = \left\{\left(x_1, y_1\right), \ldots , \left(x_n, y_n\right)\right\}
+		      \]
+		\item Unsupervised learning: vengono forniti dati non etichettati:
+		      \[
+			      \mathcal{D}_{n} = \left\{\left(x_1\right), \ldots , \left(x_n\right)\right\}
+		      \]
+		\item Reinforced learning: vengono forniti dati non etichettati, ma, interagendo con l'ambiente, l'algoritmo riceve dei reward o delle penalizzazioni, permettendo l'apprendimento. Ad esempio il punteggio in un videogioco
+		\item Semi-supervised learning: vengono forniti dati parzialmente etichettati, solitamente la maggiorparte viene data \textit{senza etichetta}. Il modello sfrutta la piccola quantità di dati etichettati per imparare a fare delle previsioni, e poi usa i dati non etichettati per migliorare la propria generalizzazione, spesso tramite tecniche di regolarizzazione, clustering o inferenza delle label.
+		\item Active learning: il modello può selezionare in modo attivo i dati dai quali desidera imparare (cioè chiedere all’utente di etichettare dati “strategici”). Questo in quanto l'etichettatura dei dati manuale può essere molto costosa (es. immagini mediche)
+	\end{itemize}
+	Il processo di learning può avvenire \textit{online}, o \textit{offline}. Nel primo caso i modello è in continua evoluzione una volta deployato, nel secondo caso lo stato del modello è congelato al momento del deplyoment, ossia impara solo durante la fase di training, tutto d'un colpo
+\end{definizione}
+
+\begin{definizione}{Task e spazio ipotesi}
+	Una task è l'insieme di funzioni che sono adeguate a risolvere un determinato problema (ad esempio classificare frutti). Dati un insieme di dati $ X $ e un insieme di labels $ Y $, allora una task è un insieme di funzioni:
+	\[
+		f: X \to Y \quad f_{\text{task}} \in Y^{X}
+	\]
+	dove $ Y^{X} $ è l'insieme di tutte le funzioni da $ X $ a $ Y $:
+	\[
+		Y^{X} = \left\{f : X \to  Y\right\}
+	\]
+	delle funzioni in $ f_{\text{tast}} $ mi limito ad analizzare un subset di interesse, detto \textit{spazio di ipotesi}:
+	\[
+		H \subset f_{\text{task}}
+	\]
+\end{definizione}
+
+
+In base al tipo di task, abbiamo diversi obbiettivi:
+\vskip3mm
+\sfblue{Classificazione}\\
+Trova una funzione $f \in  Y^{X} $  che assegna ad ogni $ x \in X $ un label $ y \in Y $
+
+\vskip3mm
+\sfblue{Regressione}\\
+Trova una funzione $ f $ tale per cui $ f\left(x\right) \in Y $, che associ ad un input $ x \in X $ un valore reale
+
+\vskip3mm
+\sfblue{Clustering}\\
+Trova una funzione $f \in  \N^{X} $  che assegna ad ogni $ x \in X $ un valore discreto $ \in \N $, ossia un indice del cluster
+
+\vskip3mm
+\sfblue{Dimensionality reduction}\\
+Trova una funzione $f \in  Y^{X} $  che mappa ogni valore $ x \in X $ ad un valore $ y \in Y $ dove $ \operatorname{dim}\left(Y\right) \ll \operatorname{dim}\left(X\right) $
+
+\vskip3mm
+\sfblue{Density estimation}\\
+Trova una funzione $f \in  \Delta \left(X\right) $  approssimi meglio la distribuzione dei dati in $ X $. $ \Delta \left(X\right) $ rappresenta tutte le possibili distribuzioni di probabilità definite su $ X $
+
+
+\begin{definizione}{Dati (pdata)}
+	I dati su di cui lavora seguono una distribuizione identificata da $ p_\text{data} $.
+	\begin{itemize}
+		\item Classification and Regression:
+		      \[
+			      p_{\text{data}} \in \Delta \left(X \times Y\right)
+		      \]
+		\item Density estimation, Clustering and Dimensionality Reduction
+		      \[
+			      p_{\text{data}} \in \Delta \left(X\right)
+		      \]
+	\end{itemize}
+\end{definizione}
+
+
+L'obiettivo  è quello di ridurre l'errore complessivo su tutti i possibili input dei dati su cui opererà l'algoritmo. Abbiamo più definizioni di obiettivo:
+\begin{definizione}{Obiettivo (target)}
+	Idealmente vorremmo minimmizzare l'errore in generale, ma questo non è possibile in quanto siamo costretti a limitarci ad un insieme di funzioni $ \mathcal{H} \in f_{\text{task}} $ e non conosciamo la data generating distribution $ p_{\text{data}} $, quindi dobbiamo operare sul training set $ \mathcal{D}_n $
+	\begin{itemize}
+		\item Ideal target:
+		      \[
+			      f^{\star} \in \underset{f \in \mathcal{F}_{\mathrm{task}}}{\arg\min} \; E(f; p_{\mathrm{data}})
+		      \]
+		\item Feasible target
+		      \[
+			      f^{\star}_{\mathcal{H}} \in \underset{f \in \mathcal{H}}{\arg\min} \; E(f; p_{\mathrm{data}})
+		      \]
+		\item Actual target
+		      \[
+			      f^{\star}_{\mathcal{H}}(\mathcal{D}_n) \in \underset{f \in \mathcal{H}}{\arg\min} \; E(f; \mathcal{D}_n)
+		      \]
+	\end{itemize}
+\end{definizione}
+L'errose complessivamente è misurato come somma di tutti gli errori su qualsiasi dato $ \in \mathcal{D}_n $:
+\begin{definizione}{Error}
+	L'errore complessivamente è misurato come somma di tutti gli errori su qualsiasi dato $ \in \mathcal{D}_n $:
+	\begin{align*}
+		E(f; p_{\mathrm{data}}) & = \mathbb{E}_{z \sim p_{\mathrm{data}}} \left[ \ell(f; z) \right] \\
+		E(f; \mathcal{D}_n)     & = \frac{1}{n} \sum_{i=1}^{n} \ell(f; z_i)
+	\end{align*}
+\end{definizione}
+L'errore è definito spesso tramite la poinwise loss, di fatto quanto di discosta la previsione dal'etichetta effettiva
+\subsection{Tipi di errori}
+\begin{itemize}
+	\item \textit{Underfitting}: l'algoritmo non si specifica abbastanza sui dati di training, non riuscendo a catturare i pattern sottostanti. Grande errore sul training set
+	\item \textit{Overfitting}: l'algoritmo si specializza \textit{troppo}, finendo per generalizzare male sui dati non visti. Piccolo errore sul training set, grande errore sui dati non visti
+\end{itemize}
+Inoltre, possiamo parlare di
+\begin{itemize}
+	\item \textit{Errore di approssimazione}: errore dovuto al fatto che non consideriamo tutte le funzione $ f \in f_{\text{task}} $ ma solo quelle in $ \mathcal{H} $
+	\item \textit{Errore iriducibile}: errore che non può essere evitato per via di fattori che riguardano la naturale variabilità di un sistema
+\end{itemize}
+\begin{definizione}{Lazy/eager learning}
+	\begin{itemize}
+		\item \textit{Eager learning}: l'algoritmo costruisce un modello generale basato sui dati di training, per poi usarlo per fare previsioni su dati non visti (es decision trees)
+		\item \textit{Lazy learning}: l'algoritmo memorizza i dati di training e rimanda la generalizzazione fino al momento in cui deve fare una previsione su un dato non visto (es KNN)
+	\end{itemize}
+\end{definizione}
+\section{KNN}
+Il k-nearest-neighboor è una tecnica utilizzata per il supervised learning che si basa sulla rappresentazione delle features in spazi $ n $-dimensionali. Intuitivamente, possiamo associare un valore numerico ad ogni $ x_1,\ldots x_n $ appartenente alle tuple delle features, in maniera tale che ogni $ x \in \mathcal{D}_m $ sia una coordinata in uno spazio $ n $-dimensionale.
+\vskip3mm
+Dato un dato appartenente al test set, vengono condierati gli $ n $ punti più vicini e viene assegnata la label più presente in questi $ k $ punti al nuovo dato. Il criterio di distanza può essere dato, ad esempio, dalla distanza euclidea
+
+\subsection{Tipi di distanza}
+I criteri di distanza o di quanto sono simili i dati sono spesso 2:
+\begin{itemize}
+	\item Similarità
+	      \begin{itemize}
+		      \item Misura numerica di quanto siano simili due oggetti di dati.
+		      \item È più alta quando gli oggetti sono più simili.
+		      \item Spesso rientra nell'intervallo [0,1]
+	      \end{itemize}
+	\item Distanza
+	      \begin{itemize}
+		      \item Misura numerica di quanto siano diversi due oggetti di dati.
+		      \item È più bassa quando gli oggetti sono più simili.
+		      \item La dissimilarità minima è spesso 0.
+		      \item Il limite superiore varia.
+	      \end{itemize}
+\end{itemize}
+\subsubsection{Distanza euclidea}
+\begin{center}
+	\begin{tikzpicture}
+		\node (a)[draw, circle] at (0,0)  {a};
+		\node (b)[draw, circle] at (3,0)  {b};
+		\draw [dashed](a)--(b);
+		\node ()[anchor=north, yshift=-0.5cm] at (0,0)  {$ \left(a_1,a_2,\ldots ,a_n\right) $};
+		\node ()[anchor=north, yshift=-0.5cm] at (3,0)  {$ \left(b_1,b_2,\ldots ,b_n\right) $};
+	\end{tikzpicture}
+\end{center}
+\begin{equation*}
+	D(a, b) = \sqrt{(a_1-b_1)^2 + (a_2-b_2)^2 + \ldots + (a_n-b_n)^2}
+\end{equation*}
+\subsubsection{Distanza di minkoski}
+La distanza di Minkowski è una generalizzazione della distanza euclidea
+\begin{equation*}
+	D(a,b) = \left( \sum_{k=1}^{p} |a_k - b_k|^r \right)^{1/r}
+\end{equation*}
+$r$ è un parametro, $p$ è il numero di dimensioni
+\begin{itemize}
+	\item $r = 1$. Distanza a blocchi di città (Manhattan, norma L1)
+	\item $r = 2$. Distanza euclidea
+	\item $r \to \infty$. Distanza "supremo" (norma $L_{\infty}$). Questa è la differenza massima tra qualsiasi componente dei vettori
+\end{itemize}
+\subsubsection{Cosine similarity}
+Questo è un indice di quanto i vettori siano allineati nello spazio. Se i vettori hanno stessa direzione e stesso verso vale 1, se sono ortogonali vale 0, se hanno stessa direezione e verso opposto vale -1. Generalizza bene a spazi $ n $-dimensionali
+\begin{equation*}
+	\cos(d_1, d_2) = \frac{d_1 \cdot d_2}{\|d_1\| \, \|d_2\|}
+\end{equation*}
+Dove $\cdot$ indica il prodotto scalare tra vettori e $\|d\|$ è la lunghezza (norma) del vettore $d$.
+
+
+\subsection{Normalizzazione}
+Se i dati sono di scala diversa è utile applicare la standardizzazione affinché ogni feature abbia la stessa importanta nel calcolo della distanza:
+\begin{itemize}
+	\item \sfblue{Standardization or Z-score normalization}: Rescale the data so that the mean is 0 and the standard deviation from the mean (standard scores) is 1
+	      \begin{equation*}
+		      x_{\text{norm}} = \frac{x - \mu}{\sigma}
+	      \end{equation*}
+	      \begin{center}
+		      $\mu$ is mean, $\sigma$ is a standard deviation from the mean (standard score)
+	      \end{center}
+
+	\item \sfblue{Min-Max scaling}: Scale the data to a fixed range -- between 0 and 1
+
+	      \begin{equation*}
+		      x_{\text{norm}} = \frac{x - x_\text{min}}{x_\text{max} - x_\text{min}}
+	      \end{equation*}
+\end{itemize}
+\subsection{Costo computazionale}
+Avendo $ \left|\mathcal{D}_n\right| = n $ e ciascun dato con $ m $ features, allora la complessità per classificare un campione è di:
+\[
+	\Theta \left(n \cdot m\right)
+\]
+Il costo può essere migliorato costruendo un $ K-d $ tree. Il processo è il seguente:
+\begin{itemize}
+	\item Prendo una dimensione $ d $ e divido i dati in due metà in base alla mediana di quella dimensione (ordino i dati in maniera crescente e la prima metà la assegno ad un insieme, la seconda ad un altro)
+	\item Ripeto ricorsivamente la stessa procedura sui due insiemi ottenuti, dividendo sulla base della seconda dimensione
+	\item Fra i punti rimanenti calcolo la distanza come nell'algoritmo KNN classico
+\end{itemize}
+\begin{center}
+	\includegraphics[width=0.7\textwidth]{images/K-d tree.png}
+\end{center}
+Il problema di questo algoritmo è il cosidetto \textit{curse of dimensionality}. In particolare, con l'aumentare delle features, dunque delle dimensioni, i punti tendono ad essere molto distanti tra di loro. Per mantenere l'efficacia, è dunque necessario avere dataset molto densi, in particolare che crescono esponenzialmente nel numero di features $ n $. Questo è un problema computazionale e di data availability
+
+\section{Perceptron}
+\begin{definizione}{Bias}
+	Il bias di un modello indica quanto forti sono le assunzioni che si fanno sulla distribuzione dei dati.
+	\begin{itemize}
+		\item I classificatori a basso bias fanno poche assunzioni sui dati (k-NN e gli alberi decisionali sono generalmente considerati a basso bias)
+		\item  I classificatori ad alto bias fanno forti assunzioni sui dati
+	\end{itemize}
+\end{definizione}
+Il perceptron non fa altro che assumere che i dati siano linearmente separabili, ossia che esista un iperpiano che separa le due classi. In particolare, il perceptron cerca di trovare i pesi $ w_1, \ldots , w_n $ e il bias $ b $ tali per cui dati sono separati dall'iperpiano:
+\[
+	0 = f_1 w_1 + f_2 w_2 + \ldots + f_n w_n + b = b + \sum_{i=1}^{n} f_i w_i
+\]
+
+\begin{algoritmo}{Perceptron learning algorithm}
+
+	\begin{algorithm}[H]
+		\While{not converged (or for some number of iterations)}{
+			\ForEach{training example $(f_1, f_2, \ldots, f_n, label)$}{
+				$prediction \leftarrow b + \sum_{i=1}^{n} w_i f_i$\;
+				\If{$prediction$ is different from $label$}{
+					\For{each $w_i$}{
+						$w_i \leftarrow w_i + f_i \times label$\;
+					}
+					$b \leftarrow b + label$\;
+				}
+			}
+		}
+
+		\caption{Perceptron learning algorithm}
+	\end{algorithm}
+\end{algoritmo}
+Nota che in realtà non è detto che ad ogni step la soluzione migliori, ma è garantito che se i dati sono linearmente separabili allora la soluzione converge. Prendi questa immagine e considera i casi 2 e 4: qui la soluzione ruota il piano nella direzione sbagliata!
+\begin{center}
+	\includegraphics{Images/perceptron.pdf}
+\end{center}
+
+
+\subsection{Multi class classification}
+\begin{definizione}{Binary classicifier}
+	Un \textit{binary classifier} è un classificatore che assegna ad ogni dato una delle due possibili classi, solitamente $ \mathcal{Y} = \left\{+1, -1\right\} $
+	\vskip3mm
+	Formalmente dato:
+	\begin{enumerate}
+		\item Uno spazio di input $\mathcal{X}$
+		\item Una distribuzione sconosciuta $\mathcal{D}$ su $\mathcal{X} \times \{-1, +1\}$
+		\item Un insieme di addestramento $D$ campionato da $\mathcal{D}$
+	\end{enumerate}
+
+	La \textit{classificazione binaria} ha come scopo quello di trovare una funzione $f$ che minimizza:
+	\[
+		\mathbb{E}_{(x, y) \sim \mathcal{D}} \left[ f(x) \neq y \right]
+	\]
+\end{definizione}
+La classificazione multiclassi invece ha il set di label contenente $ k $ classi:
+\begin{definizione}{Multiclass classification}
+	Un \textit{multiclass classifier} è un classificatore che assegna ad ogni dato una delle $ k $ possibili classi ($ \left|\mathcal{Y}\right| = k $)
+	\vskip3mm
+	Formalmente dato:
+	\begin{enumerate}
+		\item Uno spazio di input $\mathcal{X}$ e il numero di classi $K$
+		\item Una distribuzione sconosciuta $\mathcal{D}$ su $\mathcal{X} \times [K]$
+		\item Un insieme di addestramento $D$ campionato da $\mathcal{D}$
+	\end{enumerate}
+
+	La \textit{classificazione multiclasse} ha come scopo quello di trovare una funzione $f$ che minimizza:
+	\[
+		\mathbb{E}_{(x, y) \sim \mathcal{D}} \left[ f(x) \neq y \right]
+	\]
+\end{definizione}
+Con KNN possiamo ottenere classificazione multiclasse senza modifiche all'algoritmo, mentre con il perceptron dobbiamo usare delle tecniche, più in particolare dobbiamo reiterare la separazione binaria per ogni classe.
+\subsection{Ova}
+L'idea dell'OVA è di applicare $ k $ classificazioni binarie. Chiamando $ k_i $ l'$ i $-esima classe, allora alleno un modello di classificazione binaria distinguendo tra $ x \in k_i $ e $ x \not \in k_i $. C'è tuttavia il problema della confidence. Lo spazio viene infatti diviso in parti linearmente, ma alcune di queste non identificano univocamente un campione, ad esempio:
+
+dunque si definisce lo score come la distanza dall'iperpiano:
+\[
+	\text{score}_i = b_i + \sum_{j=1}^{k} w_{ij} x_{ij}
+\]
+Il maggiore di questi indica il fatto che il punto $ x_i $ appartiene maggiorrmente alla classe $ k_i $. Se il punto non appartiene a nessuna classe, quindi tutti gli score sono negativi, allora viene selezionato ancora lo score più grande(meno negativo), ossia la classe al quale il punto è più vicino
+
+\begin{algoritmo}{Training OVA}
+	\begin{algorithm}[H]
+		\KwIn{$D^{multiclass}$, \textsc{BinaryTrain}}
+		\KwOut{$f_1, \dots, f_K$}
+		\vskip3mm
+		\For{$i = 1$ \textbf{to} $K$}{
+			$D^{bin} \gets$ riclassifica $D^{multiclass}$ così che la classe $i$ sia positiva e $\neg i$ sia negativa\;
+			$f_i \gets \textsc{BinaryTrain}(D^{bin})$\;
+		}
+		\Return{$f_1, \dots, f_K$}
+	\end{algorithm}
+\end{algoritmo}
+
+\begin{algoritmo}{Classificazione OVA}
+	\begin{algorithm}[H]
+		\KwIn{$f_1, \dots, f_K$, $\hat{x}$}
+		\KwOut{classe con il punteggio massimo}
+		\vskip3mm
+		$score \gets \langle 0, 0, \dots, 0 \rangle$ \Comment*[r]{inizializza $K$ punteggi a zero}
+		\For{$i = 1$ \textbf{to} $K$}{
+			$y \gets f_i(\hat{x})$\;
+			$score_i \gets score_i + y$\;
+		}
+		\Return{$\arg\max_k score_k$}
+	\end{algorithm}
+\end{algoritmo}
+
+\subsection{AVA}
+L’idea dell’AVA (\textit{All-Versus-All}, detto anche \textit{One-vs-One}) è di applicare una classificazione binaria per \emph{ogni} coppia distinta di classi. Se ci sono $k$ classi, si addestrano $\frac{k(k-1)}{2}$ modelli binari, ciascuno incaricato di distinguere tra gli elementi delle sole due classi coinvolte.
+
+Siano $k_i$ e $k_j$ due classi distinte. Per ogni coppia $(i, j)$ con $i < j$, si addestra un classificatore binario $f_{ij}$ che distingue tra $x \in k_i$ (positivo) e $x \in k_j$ (negativo), ignorando tutti i campioni appartenenti ad altre classi.
+
+In fase di classificazione, si incrementa lo score della classe $ i $ se testando tramite il modello binario $ f_{ij} $ il campione appartiene a $ k_i $, e viceversa. Formalmente, dato un campione $ \hat{x} $ e supponendo che $ f_{ij}\left(\hat{x}\right)>0 $ se $ \hat{x} $ ha label in $ k_j $
+\begin{align*}
+	score_j & += f_{ij}\left(\hat{x}\right) \\
+	score_i & += f_{ij}\left(\hat{x}\right)
+\end{align*}
+In alternativa, si può semplicemente aggiungere 1 allo score, anziche considerare la distanza dall'iperpiano. Questa viene detta versione \textit{unweighted}
+
+\begin{algoritmo}{Training AVA}
+	\begin{algorithm}[H]
+		\KwIn{$D^{multiclasse}$, \textsc{BinaryTrain}}
+		\KwOut{$f_{ij} \quad \forall 1 \le i < j \le k$}
+		\vskip3mm
+		$f_{ij} \gets \emptyset,\ \forall\, 1 \leq i < j \leq K$\;
+		\For{$i = 1$ \textbf{to} $K-1$}{
+			$D^{pos} \gets$ tutti $x \in D^{multiclasse}$ etichettati $i$\;
+			\For{$j = i+1$ \textbf{to} $K$}{
+				$D^{neg} \gets$ tutti $x \in D^{multiclasse}$ etichettati $j$\;
+				$D^{bin} \gets \{(x, +1) : x \in D^{pos}\} \cup \{(x, -1) : x \in D^{neg}\}$\;
+				$f_{ij} \gets \textsc{BinaryTrain}(D^{bin})$\;
+			}
+		}
+		\Return{$f_{ij} \quad \forall 1 \le i < j \le k$}
+	\end{algorithm}
+\end{algoritmo}
+
+
+% Algoritmo di test AllVersusAll (Tutti contro Tutti)
+\begin{algoritmo}{Classificazione AVA}
+	\begin{algorithm}[H]
+		\KwIn{tutti i $f_{ij}$, $\hat{x}$}
+		\KwOut{classe con il punteggio massimo}
+		\vskip3mm
+		$score \gets \langle 0,0,\dots,0 \rangle$ \Comment*[r]{inizializza $K$ punteggi a zero}
+		\For{$i = 1$ \textbf{to} $K-1$}{
+			\For{$j = i+1$ \textbf{to} $K$}{
+				$y \gets f_{ij}(\hat{x})$\;
+				$score_i \gets score_i + y$\;
+				$score_j \gets score_j - y$\;
+			}
+		}
+		\Return{$\arg\max_k score_k$}
+	\end{algorithm}
+\end{algoritmo}
+
+\subsection{Calcolo precisione}
+\begin{itemize}
+	\item \textit{Microaveraging}: media complessiva dei casi classificati correttamente
+	      \[
+		      \frac{\text{casi classificati correttamente}}{\text{casi totali}}
+	      \]
+	\item \textit{Macroaveraging}: media fra le medie dei casi classificati correttamente all'interno delle singole classi. Date $ n $ classi
+	      \[
+		      \frac{\sum_{k=1}^{n} \frac{\text{casi classificati correttamente della classe $ k $}}{\text{campioni appartenenti alla classe $ k $}}}{n}
+	      \]
+	      da più importanza alle label rare
+\end{itemize}
+\subsection{Decision trees}
+L'idea è quella di dividere ad ogni nodo il dataset in due sottoinsiemi in base al valore di una feature, in modo tale da massimizzare la purezza delle classi nei sottoinsiemi. Quando si è arrivati a una foglia, si decide la categoria da associarvi in base a:
+\begin{itemize}
+	\item L'elemento prevalente nel caso della classificazione:
+	      \[
+		      y^m \leftarrow \underset{t \in \{ 1, \ldots, C \}}{\operatorname{argmax}} \sum_{m_i} \mathbf{1} \left\{ t = t^{(m_i)} \right\}
+	      \]
+	\item La media dei valori nel caso della regressione:
+	      \[
+		      y^m \leftarrow \frac{1}{N_m} \sum_{m_i} y^{(m_i)}
+	      \]
+\end{itemize}
+\subsection{Training}
+Trovare un tree ideale (che sia quindi piccolo e con abbastanza campioni per ogni spazio) è un problema \textit{NP-hard}, quindi si usano euristiche greedy:
+\begin{itemize}
+	\item Splitto in base al miglior attributo (seglendolo in base al \textit{gain} della split)
+	\item Ripeto ricorsivamente per i sottoinsiemi ottenuti
+\end{itemize}
+Il criterio secondo cui scegliere il miglior attributo può essere basato su:
+\begin{itemize}
+	\item Maggiore accuracy gain
+	\item Maggiore information gain
+	\item Minore GINI index
+\end{itemize}
+\subsubsection{Accuracy gain}
+Chiamando l'errore per una regione $ R $ $ L\left(R\right) $, allora confrontiamo l'errore prima e dopo che venga splittata la regione nelle regioni $ R_1 $ e $ R_2 $:
+\begin{itemize}
+	\item Errore prima:
+	      \[
+		      L\left(R\right)
+	      \]
+	\item Errore dopo:
+	      \[
+		      \frac{\left|R_1\right|}{\left|R\right|} L\left(R_1\right) + \frac{\left|R_2\right|}{\left|R\right|} L\left(R_2\right)
+	      \]
+\end{itemize}
+L'\textit{accuracy gain} è la differenza fra i due errori:
+\[
+	\text{accuracy gain} = L\left(R\right) - \frac{\left|R_1\right|L\left(R_1\right) + \left|R_2\right|L\left(R_2\right)}{\left|R\right|}
+\]
+
+\subsubsection{Information gain}
+Uno split che è effettivamente buono può avere un gain basso o nullo. Per questo dobbiamo usare il concetto di certainty per compensare questo problema. In particolare:
+\begin{itemize}
+	\item Tutti gli esempi in una regione appartengono alla stessa classe (bassa \textit{uncertainty}, bene)
+	\item Tutti gli esempi in una regione sono equamente distribuiti tra le classi (alta \textit{uncertainty}, male)
+\end{itemize}
+L'uncertainty si può misurare con l'entropia, che indica quanto è difficile prevedere l'esito di un esperimento casuale.
+\[
+	H(X) = -\mathbb{E}_{X \sim p} [\log_2 p(X)] = -\sum_{x \in \mathcal{X}} p(x) \log_2 p(x)
+\]
+in maniera analoga all'accuracy gain si può parlare di \textit{information gain}, ossia di quanto l'entropia diminuisce dopo uno split:
+\[
+	IG = H\left(R\right) - \frac{\left|R_1\right| H\left(R_1\right) + \left|R_2\right| H\left(R_2\right)}{\left|R\right|}
+\]
+
+\subsubsection{Gini index}
+L'indice $ GINI $ indica quanto una classe è mescolata, un po' in maniera opposta a quanto fa l'entropia. Una classe completamente pura avrà indice GINI pari a 0, mentre
+\vskip3mm
+In maniera simile all'entropia vale 0 quando tutti gli esempi appartengono alla stessa classe, e vale massimo quando gli esempi sono equamente distribuiti tra le classi.
+\[
+	\mathrm{GINI}(R) = 1 - \sum_j [p(j|R)]^2
+\]
+
+\subsubsection{Bootstrapping}
+Il resampling è una tecnica che consiste nel creare nuovi dataset a partire da un dataset originale, campionando con o senza rimpiazzo. Si campionano dataset di dimensione inferiore randomicamente dal dataset iniziale e si esegue microaveraging
+\begin{center}
+	\includegraphics[width=0.7\textwidth]{images/bootstrapping.png}
+\end{center}
+\begin{definizione}{Bagging}
+	Il \textit{bagging} (bootstrap aggregating) è una tecnica di ensemble learning che utilizza il resampling per migliorare la stabilità e l'accuratezza dei modelli di apprendimento automatico. Si creano più modelli indipendenti su diversi campioni del dataset e si combinano le loro previsioni tramite votazione (per classificazione) o media (per regressione)
+\end{definizione}
+Una random forest non è altro che un insieme di decision trees il cui risultato è aggregato come votazione(per classificazione) o come media(per regressione)
+
+
 \section{Gradient descent}
 Per valutare la qualità di un modello, si usa una funzione di costo che misura la differenza fra i valori previsti e quelli reali. L'obiettivo è minimizzare questa funzione di costo.
 \begin{definizione}{Funzione di loss}
@@ -59,12 +505,12 @@ il che equivale a considerare ciascun punto nel training set e aggiornare il pes
 		\vskip3mm
 		\SetKwFunction{GD}{gradient\_descent}
 		\Fn{\GD{$X, Y, L, \eta$}}{
-			$ w ^{\left(0\right)} = \left[0,\ldots ,0\right] $ \Comment*{Dati come input in alternativa}
-			\For{$ k \in \left[0, \ldots , K\right] $}{
-				$ g^{\left(k\right)} = 	\nabla_{w^{\left(k\right)}} L $ \Comment*[r]{shift for each direction}
-				$ w^{\left(k\right)} = w^{\left(k-1\right)} - \eta^{\left(k\right)} g^{\left(k\right)} $ \Comment*[r]{move in direction of gradient}
-			}
-			\Return $ w^{\left(k\right)} $
+		$ w ^{\left(0\right)} = \left[0,\ldots ,0\right] $ \Comment*{Dati come input in alternativa}
+		\For{$ k \in \left[1, \ldots , K\right] $}{
+		$ g^{\left(k\right)} = 	\nabla_{w^{\left(k\right)}} L|_{w^{\left(k-1\right)}} $ \Comment*[r]{shift for each direction}
+		$ w^{\left(k\right)} = w^{\left(k-1\right)} - \eta^{\left(k\right)} g^{\left(k\right)} $ \Comment*[r]{move in direction of gradient}
+		}
+		\Return $ w^{\left(K\right)} $
 		}
 	\end{algorithm}
 \end{algoritmo}
@@ -80,6 +526,279 @@ Nota che $ w^{\left(k\right)} $ indica i pesi relativi alla $ k $-esima iterazio
 	\end{bmatrix}
 \]
 dove $ L $ è la \textit{funzione di loss}
+\subsection{Batch/stocastic gradient descent (BGD vs SGD)}
+\begin{algoritmo}{Batch gradient descent}
+	\begin{algorithm}[H]
+		\KwIn{Learning rate $\eta_k$, initial parameters $w$}
+		\vskip3mm
+
+		\SetKwFunction{GD}{BGD}
+		\Fn{\GD{$X, Y, L, w, \eta$}}{
+			$ w ^{\left(0\right)} = \left[0,\ldots ,0\right] $ \Comment*{Dati come input in alternativa}
+			\vskip3mm
+			\While{stopping criteria not met}{
+				\Comment{Calcolo gradiente su $N$ examples:}
+				$\quad g \gets \frac{1}{N} \nabla_{w} \sum_i L(f(x_i; w), y_i)$\\
+				\vskip3mm
+
+				\Comment{Applico update:}
+				$\quad w \gets w - \eta_k \, g$
+			}
+		}
+	\end{algorithm}
+\end{algoritmo}
+
+Nello \textit{stochastic gradient descent} invece, ad ogni iterazione si considera un solo esempio (o un piccolo batch di esempi) per calcolare il gradiente:
+\begin{algoritmo}{Stocastic gradient descent}
+	\begin{algorithm}[H]
+		\KwIn{Learning rate $\eta_k$, initial parameters $w$}
+		\vskip3mm
+
+		\SetKwFunction{GD}{SGD}
+		\Fn{\GD{$X, Y, L, w, \eta$}}{
+			\While{stopping criteria not met}{
+				\Comment{Calcolo gradiente su $N$ examples:}
+				$\quad g \gets \nabla_{w} L(f(x_i; w), y_i)$\\
+				\vskip3mm
+
+				\Comment{Applico update:}
+				$\quad w \gets w - \eta_k \, g$\\
+			}
+		}
+	\end{algorithm}
+\end{algoritmo}
+Di fatto la differenza sta nel calcolare il gradiente su tutti i dati (BGD) o su un singolo dato (SGD). In questo secondo caso, il gradiente sarà più rumoroso, ma l'algoritmo convergerà più velocemente.
+\vskip3mm
+\begin{minipage}[t]{0.48\textwidth}
+	\begin{center}
+		\sfblue{Batch gradient descent}
+	\end{center}
+	\[
+		g \gets \frac{1}{N} \nabla_{w} \sum_i L(f(x_i; w), y_i)
+	\]
+\end{minipage}
+%
+\begin{minipage}[t]{0.48\textwidth}
+	\begin{center}
+		\sfblue{Stocastic gradient descent}
+	\end{center}
+	\[
+		g \gets \nabla_{w} L(f(x_i; w), y_i)
+	\]
+\end{minipage}
+\subsection{Gradieent descent con momentum}
+Si può simulare una "discesa con inerzia" aggiungendo un termine di momentum al calcolo del gradiente. In questo modo si riesce a superare più facilmente i minimi locali o a scendere più velocemente:
+\begin{algoritmo}{Stocastic gradient descent con momentum}
+	\begin{algorithm}[H]
+		\KwIn{Learning rate $\eta_k$, initial parameters $w$, initial velocity $ v $, momentum $ \alpha $}
+		\vskip3mm
+
+		\SetKwFunction{GD}{SGD\_momentum}
+		\Fn{\GD{$X, Y, L, w, \eta, v, \alpha $}}{
+			\While{stopping criteria not met}{
+				\Comment{Calcolo gradiente su $N$ examples:}
+				$g \gets \nabla_{w} L(f(x_i; w), y_i)$\\
+
+				\vskip3mm
+				\Comment{Calcolo velocità:}
+				$ v \gets \alpha v - \eta_k g $
+
+				\vskip3mm
+				\Comment{Applico update:}
+				$w \gets w + v$\\
+			}
+		}
+	\end{algorithm}
+\end{algoritmo}
+
+
+\section{SVN}
+Possiamo pensare che all'interno di un perceptron sia opportuno cercare un piano tale per cui la distanza fra i vari punti è massima, non uno a caso che li separa. Questo è ciò che fanno le \textit{support vector machines}.
+\vskip3mm
+L'idea è di cercare due iperpiani, uno nel senso positivo e uno nel senso negativo, tali per cui la distanza tra i due è massima.
+\begin{align*}
+	w x_i + b = 1 &  & wx_i + b = -1
+\end{align*}
+Si noti che il +1 e -1 \textit{non} impongono alcuna distanza da piano centrale, ma servono solo per definire i due piani paralleli. La distanza tra dal piano parallelo è data da:
+\[
+	\text{distanza} = \frac{w x_i + b}{\|w\|} = \frac{1}{\|w\|}
+\]
+otteniamo dunque il problema di ottimizzazione quadratica:
+\begin{gather*}
+	\max_{w, b}\frac{1}{\|w\|} = \min_{w, b} \|w\|                                      = \min_{w, b} \|w\|^2 \\
+	\quad y_i (w \cdot x_i + b) \geq 1 \quad \forall i
+\end{gather*}
+\subsection{Slack variables}
+Se i dati non sono linearmente separabili allora sarà impossibile trovare una soluzione al problema. Per questo si introducono le \textit{slack variables} $ \xi_i \geq 0 $, che permettono ad alcuni punti di essere "spostati" dalla parte corretta del piano. In particolare, con $ \left|\mathcal{D}_n\right| = n $ si avranno $ n $ slack variables.
+\begin{gather*}
+	\min_{w, b} \|w\|^2  + \mathcal{C} \sum_{i} \mathcal{S}_i\\
+	\quad y_i (w \cdot x_i + b) \geq 1 -\mathcal{S}_i \quad \forall i, \mathcal{S}_i \ge 0
+\end{gather*}
+\begin{itemize}
+	\item Nella prima parte vogliamo tenere conto della penalità data dall'uso delle slack variables
+	\item Nella seconda parte, se uno slack variable $ \mathcal{S}_i $ è maggiore di 0, allora il punto $ x_i $ non è correttamente classificato
+	\item Il parametro $ \mathcal{C} $ bilancia l'importanza della massimizzazione del margine e la minimizzazione dell'errore di classificazione dovuto alle slack variables, utile per controllare over/underfitting
+\end{itemize}
+Dato l'iperpiano ideale, possiamo trovare i valori delle slack variables come segue:
+\[
+	\mathcal{S}_i =
+	\begin{cases}
+		0                        & \text{if } y_i(w \cdot x_i + b) \geq 1 \\
+		1 - y_i(w \cdot x_i + b) & \text{otherwise}
+	\end{cases}
+\]
+che in un one-liner diventa:
+\[
+	\mathcal{S}_i = \operatorname{max}\left(0, 1 - y_i\left(w \cdot x_i + b\right)\right)
+\]
+Tenendo conto di questo possiamo rendere il problema di soft-svm un poblema unconstrained, dato che non abbiamo più bisogno di assicurarci che i punti siano dalla parte corretta del piano:
+\begin{gather*}
+	\min_{w, b} \|w\|^2  + \mathcal{C} \sum_{i} \mathcal{S}_i \\
+	\min_{w, b} \|w\|^2  + \mathcal{C} \sum_{i} \operatorname{max}\left(0, 1 - y_i\left(w \cdot x_i + b\right)\right)\\
+\end{gather*}
+Si noti che $ \max\left(0, 1 - y_i\left(w \cdot x_i + b\right)\right) = \operatorname{loss}_{\text{hinge}}\left(y_i, y'_i\right) $
+
+\subsection{Tipi problemi di programmazione}
+Esistono problemi noti di programmazioni con soluzioni efficienti e avanzate. Questi probemi sono classificati in base alla forma della funzione obiettivo e dei vincoli.
+\subsubsection{Programmazione lineare}
+\begin{align*}
+	 & \text{min}_{x} \quad c^T x               \\
+	 & \text{s.t.} \quad Ax = b, \quad x \geq 0
+\end{align*}
+Oppure, in maniera compatta:
+\[
+	\text{Minimizza } c^T x \text{ soggetto a } Ax = b \text{ e } x \geq 0
+\]
+
+\subsubsection{Programmazione quadratica}
+\begin{align*}
+	 & \text{min}_{x} \quad c^T x + \frac{1}{2}x^T Q x \\
+	 & \text{s.t.} \quad Ax = b, \quad Cx \geq d
+\end{align*}
+Oppure, in maniera compatta:
+\[
+	\text{Minimizza } c^T x + \frac{1}{2}x^T Q x \text{ soggetto a } Ax = b \text{ e } Cx \geq d
+\]
+Se la matrice $ Q $ è semi-definita positiva, allora il problema è convesso e ammette una soluzione unica. Una matrice $ Q $ è semi-definita positiva se:
+\[
+	x^{T}Qx \geq 0 \quad \forall x \in \R^{n}
+\]
+
+\subsubsection{Programmazione non lineare}
+\begin{align*}
+	 & \text{min}_{x} \quad f(x)                     \\
+	 & \text{s.t.} \quad g(x) = 0, \quad h(x) \geq 0
+\end{align*}
+Oppure, in maniera compatta:
+\[
+	\text{Minimizza } f(x) \text{ soggetto a } g(x) = 0 \text{ e } h(x) \geq 0
+\]
+
+\subsubsection{Problema duale - caso separabile}
+Per un problema quadratico è presente un problema duale ben noto:
+\[
+	\begin{aligned}
+		 & \max_{\alpha} \;\; \sum_{i} \alpha_i - \frac{1}{2} \sum_{i} \sum_{j} \alpha_i \alpha_j y_i y_j\, \mathbf{x}_i^T \mathbf{x}_j \\
+		 & \text{s.t.} \;\; \sum_{i} \alpha_i y_i = 0,\quad \alpha_i \geq 0, \;\; \forall i
+	\end{aligned}
+\]
+
+Dato una soluzione $ \alpha_1, \ldots , \alpha_n $ al problema duale, la soluzione al problema primale è:
+\[
+	w = \sum_{i} \alpha_i y_i x_i
+\]
+
+\[
+	b = y_k - \sum_{i} \alpha_i y_i x_i^{T} x_k
+\]
+
+
+Ogni $ \alpha_i $ diverso da zero indica che la corrispondente $ x_i $ è un support vector. La funzione di classificazione è (nota che non serve calcolare esplicitamente $ w $):
+
+\[
+	f(x) = \sum_{i} \alpha_i y_i x_i^{T} x + b
+\]
+
+\subsubsection{Problema duale - caso non separabile}
+Nel caso i punti non siano linearmente separabili, il problema duale diventa:
+\[
+	\begin{aligned}
+		 & \max_{\alpha} \;\; \sum_{i} \alpha_i - \frac{1}{2} \sum_{i} \sum_{j} \alpha_i \alpha_j y_i y_j\, \mathbf{x}_i^{T} \mathbf{x}_j \\
+		 & \text{s.t.} \;\; \sum_{i} \alpha_i y_i = 0,\quad 0 \leq \alpha_i \leq C,\; \forall i
+	\end{aligned}
+\]
+di fatto cambiano le condizioni
+
+\subsubsection{Kernel trick}
+Se i dati non sono linearmente separabili nello spazio originale, possiamo provare a mappare i dati in uno spazio di dimensione superiore, dove potrebbero essere separabili.
+Il problema è che mappare i dati in uno spazio di dimensione superiore può essere computazionalmente costoso. Tuttavia, possiamo sfruttare il fatto che nel problema duale, i dati appaiono solo sotto forma di prodotti scalari $ x_i^{T} x_j $. Supponendo di voler calcolare il prodotto scalare in uno spazio di dimensione superiore tramite una funzione di mappatura $ \phi\left(x\right) $, possiamo definire una funzione kernel $ K\left(x_i, x_j\right) $ che calcola direttamente il prodotto scalare nello spazio mappato.
+\[
+	K\left(x_i, x_j\right) = \phi \left(x_i\right)^{T} \phi \left(x_j\right)
+\]
+E' dunque possibile trovare funzioni da applicare direttamente sui dati originali che simulano il calcolo del prodotto scalare nello spazio mappato, senza dover esplicitamente mappare i dati. Di fatto, facciamo un calcolo sapendo che è come se avessimo prima mappato i dati, ma saltando a tutti gli effetti la mappatura. Un esempio di kernel può essere:
+\[
+	K\left(x_i, x_j\right) = \left(1 + x_i^{T} x_j\right)^2
+\]
+\begin{teorema}{Teorema di Mercer}
+	\begin{itemize}
+		\item Ogni funzione simmetrica e semidefinita positiva è un kernel.
+		\item Le funzioni simmetriche e semidefinite positive corrispondono a una matrice di Gram simmetrica e semidefinita positiva:
+	\end{itemize}
+
+	\[
+		K =
+		\begin{pmatrix}
+			K(\mathbf{x}_1, \mathbf{x}_1) & K(\mathbf{x}_1, \mathbf{x}_2) & \cdots & K(\mathbf{x}_1, \mathbf{x}_n) \\
+			K(\mathbf{x}_2, \mathbf{x}_1) & K(\mathbf{x}_2, \mathbf{x}_2) & \cdots & K(\mathbf{x}_2, \mathbf{x}_n) \\
+			\vdots                        & \vdots                        & \ddots & \vdots                        \\
+			K(\mathbf{x}_n, \mathbf{x}_1) & K(\mathbf{x}_n, \mathbf{x}_2) & \cdots & K(\mathbf{x}_n, \mathbf{x}_n)
+		\end{pmatrix}
+	\]
+\end{teorema}
+
+Nb: una matrice simmetrica è semidefinita positiva se e solo se tutti gli autovalori sono non negativi.
+\vskip3mm
+Alcuni kernel comuni sono:
+\begin{itemize}
+	\item Lineare:
+	      \[
+		      K(x_i, x_j) = x_i^T x_j
+	      \]
+	\item Polinomiale di grado $p$:
+	      \[
+		      K(x_i, x_j) = \left( 1 + x_i^T x_j \right)^p
+	      \]
+	\item Gaussiana (funzione a base radiale):
+	      \[
+		      K(x_i, x_j) = \exp\left( -\frac{\|x_i - x_j\|^2}{2\sigma^2} \right)
+	      \]
+	      Mappatura $\Phi$: $x \to \varphi(x)$, dove $\varphi(x)$ è \textit{infinito-dimensionale}.
+\end{itemize}
+
+\subsection{Regularizzazione}
+Per controllare l'overfitting, si può aggiungere un termine di regularizzazione alla funzione di loss. In generale, l'obiettivo diventa:
+\[
+	\arg\min_{w,\,b} \; \sum_{i=1}^{n} \text{loss}(y y') + \lambda\, \text{regularizer}(w, b)
+\]
+Un regularizer comune è la $ p $-norma:
+\[
+	r\left(w, b\right) = \left( \sum_{i} |w_i|^p \right)^{1/p} = \|w\|^{p}
+\]
+\begin{definizione}{Convessità}
+	Matematicamente, una funzione $ f:\R^n \to \R $ è detta \textit{convessa} se per ogni coppia di punti $ x_1, x_2 \in \R^n $ e per ogni $ t \in (0, 1) $ vale che:
+	\[
+		f\big(tx_1 + (1-t)x_2\big) \leq t f(x_1) + (1-t) f(x_2) \qquad \forall\, 0 < t < 1
+	\]
+\end{definizione}
+\begin{teorema}{Convessità target con regolarizzazione}
+	Se la funzione di loss è convessa e il regularizzatore è convesso, allora la funzione obiettivo complessiva è convessa.
+\end{teorema}
+Le \textit{p-norms} sono \textit{convesse} per $ p \ge 1 $
+
+
+
+
+
 
 \section{Unsupervised learning - riduzione dimensione}
 L'idea generale è quella di "appirattire" i punti nell'asse parallela all'asse con varianza massima, così da ridurre al massimo la perdita di informazione
@@ -205,7 +924,113 @@ L'obbiettivo del nostro problema è trovare un sistema di riferimento in cui i i
 	w_i = \operatorname{arg max} \left\{w ^{\top} C w :\; w ^{\top}w = 1, \quad w \perp w_j \quad \forall j : 1 \le j \le i<\right\}
 \]
 
-si può dimostrare che le la soluzione a questo problema di massimizzazione è dato dagli \textit{autovettori} di $ C $. In particolare, la $ i $-esima componente principale è data dall'$ i $-esimo autovettore di $ C $. Per trovare gli autovettori di $ C $ ho due metodi:
+si può dimostrare che le la soluzione a questo problema di massimizzazione è dato dagli \textit{autovettori} di $ C $. In particolare, la $ i $-esima componente principale è data dall'$ i $-esimo autovettore di $ C $.
+\vskip3mm
+Partiamo da
+\[
+	w_i^{T} C w_i
+\]
+la quale è scomponibile in per il teorema di decomposizione delle matrici in:
+\[
+	w_i^{T} \left(U \Lambda U^{T} \right) w_i
+\]
+
+\begin{gather*}
+	U^{T}w_i=
+	\begin{bmatrix}
+		w_{11} & \ldots & w_{1m} \\
+		\vdots &        &        \\
+		w_i    &        &        \\
+		\vdots &        &        \\
+		w_{m1} & \ldots & w_{mm} \\
+	\end{bmatrix}
+	\cdot
+	\begin{bmatrix}
+		w_{i1} \\
+		\vdots \\
+		w_{im} \\
+	\end{bmatrix}
+	=\begin{bmatrix}
+		0         \\
+		\vdots    \\
+		\|w_i\|^2 \\
+		\vdots    \\
+		0
+	\end{bmatrix}
+\end{gather*}
+L'ultimo passaggio in quanto gli autovettori sono ortogonali tra loro, dunque il prodotto scalare tra autovettori diversi è 0.
+\begin{gather*}
+	\Lambda (U^{T}w_i)=
+	\begin{bmatrix}
+		\lambda_1 &        &           \\
+		          & \ddots &           \\
+		          &        & \lambda_m
+	\end{bmatrix}
+	\cdot
+	\begin{bmatrix}
+		0         \\
+		\vdots    \\
+		\|w_i\|^2 \\
+		\vdots    \\
+		0
+	\end{bmatrix}
+	=
+	\begin{bmatrix}
+		0                   \\
+		\vdots              \\
+		\lambda_i \|w_i\|^2 \\
+		\vdots              \\
+		0
+	\end{bmatrix}
+\end{gather*}
+\[
+	U(\Lambda U^{T}w_i)=
+	\begin{bmatrix}
+		w_{11} & \ldots & w_{m_1} \\
+		\vdots &        &         \\
+		w_{1i} &        &         \\
+		\vdots &        &         \\
+		w_{1m} & \ldots & w_{mm}  \\
+	\end{bmatrix}
+	\cdot
+	\begin{bmatrix}
+		0                   \\
+		\vdots              \\
+		\lambda_i \|w_i\|^2 \\
+		\vdots              \\
+		0
+	\end{bmatrix}
+	=
+	\lambda_i \|w_i\|^2 \cdot
+	\begin{bmatrix}
+		w_{i_1} \\
+		\vdots  \\
+		w_{im}
+	\end{bmatrix}
+\]
+e infine
+\[
+	w_i^{T}(U\Lambda U^{T}w_i)=
+	\lambda_i \|w_i\|^2 \cdot
+	\begin{bmatrix}
+		w_{i1} & \ldots & w_{im}
+	\end{bmatrix}
+	\cdot
+	\begin{bmatrix}
+		w_{i_1} \\
+		\vdots  \\
+		w_{im}
+	\end{bmatrix}
+	=
+	\lambda_i \|w_i\|^2\|w_i\|^2 = \lambda_i \|w_i\|^4
+\]
+Da notare, di solito gli autovettori sono normalizzati, dunque $ \|w_i\| = 1 $, e quindi:
+\[
+	w_i^{T}Cw_i = \lambda_i
+\]
+
+
+Per trovare gli autovettori di $ C $ ho due metodi:
 \vskip3mm
 \sfblue{Eigenvalue decomposition}: data $ A \in \R^{m \times m} $ \textit{simmetrica} allora esiste
 \begin{itemize}
@@ -236,7 +1061,7 @@ tali per cui
 \]
 dove
 \[
-	\Lambda = \begin{bmatrix}
+	S = \begin{bmatrix}
 		s_1 &        &     \\
 		    & \ddots &     \\
 		    &        & s_m
@@ -249,7 +1074,7 @@ Dato il fatto che $ C = \frac{1}{n} \bar{X}\bar{X}^{\top} $, allora posso
 	\item Chiamare $ U, \lambda = \operatorname{eig}\left(C\right) $
 	\item Chiamare $ U, s, V = \operatorname{SVN}\left(\bar{X}\right) $ e calcolare
 	      \[
-		      \lambda = \left[\frac{\lambda_1 ^2}{n}, \ldots , \frac{\lambda_n ^2}{n}\right]
+		      \lambda = \left[\frac{s^2}{n}, \ldots , \frac{s^2}{n}\right]
 	      \]
 \end{itemize}
 L'equivalenza dei due metodi è data dal fatto che:
@@ -653,8 +1478,671 @@ Se il vettore $ l $ degli scores deve dare origine ad una regressione di $ n $ v
 \]
 nota che questa loos function è relativa \textit{al singolo input $ x_i $}
 
+\subsection{Backpropagation}
+L'idea della back propagation è di calcolare il gradiente della loss function rispetto ai pesi della rete neurale, in modo da poter aggiornare i pesi stessi tramite discesa del gradiente. L'algoritmo si basa sulla regola della catena per calcolare i gradienti in modo efficiente.
+\vskip3mm
+\sfblue{Notazione}
+Inanzitutto prendiamo un sample $ x $ alla volta, con etichetta $ y $ in una rete con $ L $ livelli. La loss function è data da:
+\[
+	\mathcal{L} = \sum_{j} \left(a_j^{\left(L\right)} - y_j\right)^2
+\]
+Indichiamo la \textit{pre-attivazione} a livello $ L $ del neurone $ i $ con $ z_i^{\left(L\right)} $. Il peso dal neurone $ i $ nel livello $ L-1 $ al neurone $ j $ nel livello $ L $ è dato da $ w_{ji}^{\left(L\right)} $("al contrario")
+\[
+	z_i^{\left(L\right)} = a_0^{\left(L-1\right)} w_{i0}^{\left(L\right)} + \ldots  + a_k^{\left(L-1\right)} w_{ik}^{\left(L\right)} = \sum_{k} a_k ^{\left(L-1\right)} w_{ik}
+\]
+dove $ k $ scorre tutti i neuroni del livello $ L-1 $. L'attivazione del neurone $ i $ nel livello $ L $ è data da:
+\[
+	a_i^{\left(L\right)} = h\left(z_i^{\left(L\right)}\right)
+\]
+
+\begin{minipage}[c]{0.48\textwidth}
+	\begin{center}
+		\begin{forest}
+			for tree={grow = 90}
+			[
+			$ \mathcal{L} $
+			[$ a_i^{\left(L\right)} $
+			[
+			$ z_i^{\left(L\right)} $
+			[$ w_{ik}^{\left(L\right)} $ ]
+				[$ a_{k}^{\left(L-1\right)} $ ]
+				[$ b^{\left(L\right)} $ ]
+			]
+			]
+			]
+		\end{forest}
+	\end{center}
+\end{minipage}
+%
+\begin{minipage}[c]{0.48\textwidth}
+	Per la chain rule, il gradiente della loss function rispetto al peso $ w_{ik}^{\left(L\right)} $ è dato da:
+	\[
+		\frac{\partial \mathcal{L}}{\partial w_{ik}^{\left(L\right)}} = \frac{\partial \mathcal{L}}{\partial a_i^{\left(L\right)}} \cdot \frac{\partial a_i^{\left(L\right)}}{\partial z_i^{\left(L\right)}} \cdot \frac{\partial z_i^{\left(L\right)}}{\partial w_{ik}^{\left(L\right)}}
+	\]
+\end{minipage}
+\vskip3mm
+\sfblue{Derivata rispetto al peso e bias}: in questo caso, siccome so che modificando il peso $ w_{ij}^{\left(L\right)} $ andrò a modificare solo $ z_{i}^{\left(L\right)} $, quindi mi basta considerare l'influenza di un singolo neurone nell'ultimo layer
+\[
+	\frac{\partial \mathcal{L}}{\partial w_{ik}^{\left(L\right)}} = \underbracket[0.1ex]{\frac{\partial \mathcal{L}}{\partial a_i^{\left(L\right)}}}_{1} \cdot \underbracket[0.1ex]{\frac{\partial a_i^{\left(L\right)}}{\partial z_i^{\left(L\right)}}}_{2} \cdot \underbracket[0.1ex]{\frac{\partial z_i^{\left(L\right)}}{\partial w_{ik}^{\left(L\right)}}}_{3} \\
+\]
+\vskip0mm
+\begin{minipage}[t]{0.48\textwidth}
+	\begin{align*}
+		1 & = 2\left(a_i^{\left(L\right)} - y_i\right) \\
+		2 & = h'\left(z_i^{\left(L\right)}\right)      \\
+		3 & = a_k^{\left(L-1\right)}
+	\end{align*}
+\end{minipage}
+%
+\begin{minipage}[t]{0.48\textwidth}
+	\begin{align*}
+		\mathcal{L}          & = \sum_{j} \left(a_j^{\left(L\right)} - y_j\right)^2 \\
+		a_i^{\left(L\right)} & = h\left(z_i^{\left(L\right)}\right)                 \\
+		z_i^{\left(L\right)} & = \sum_{k} a_k ^{\left(L-1\right)} w_{ik}            \\
+	\end{align*}
+\end{minipage}
 
 \vskip3mm
+\sfblue{Derivata rispetto all'attivazione nel neurone precedente:} a differenza di ciò che accade con bias e pesi, so che modificando l'attivazione $ a_{k}^{\left(L-1\right)} $ tutti i neuroni nel layere $ L $ ne risentiranno. Per questo devo considerare la somma dei cambiamenti
+\[
+	\frac{\partial \mathcal{L}}{\partial a_k^{(L-1)}} =
+	\sum_{j}
+	\underbracket[0.1ex]{  \frac{\partial \mathcal{L}}{\partial a_j^{(L)}} }_{1}
+	\cdot
+	\underbracket[0.1ex]{  \frac{\partial a_j^{(L)}}{\partial z_j^{(L)}}}_{2}
+	\cdot
+	\underbracket[0.1ex]{  \frac{\partial z_j^{(L)}}{\partial a_k^{(L-1)}}}_{3}
+\]
+\vskip0mm
+\begin{minipage}[t]{0.48\textwidth}
+	\begin{align*}
+		1 & = 2\left(a_i^{\left(L\right)} - y_i\right) \\
+		2 & = h'\left(z_i^{\left(L\right)}\right)      \\
+		3 & = w_{ik}
+	\end{align*}
+\end{minipage}
+%
+\begin{minipage}[t]{0.48\textwidth}
+	\begin{align*}
+		\mathcal{L}          & = \sum_{j} \left(a_j^{\left(L\right)} - y_j\right)^2 \\
+		a_i^{\left(L\right)} & = h\left(z_i^{\left(L\right)}\right)                 \\
+		z_i^{\left(L\right)} & = \sum_{k} a_k ^{\left(L-1\right)} w_{ik}            \\
+	\end{align*}
+\end{minipage}
+
+
+\subsection{Reti neurali con layer specializzati}
+Le reti neurali possono essere arricchite con layer che eseguono operazioni diverse dalla somma pesata seguita da una funzione di attivazione. Le tre operazioni più comuni sono:
+\begin{itemize}
+	\item Convoluzione $ \rightarrow  $ \cref{convolution operation}
+	\item Operazioni non lineari $ \rightarrow  $ \cref{non linear operations}
+	\item Operazioni di spatial pooling $ \rightarrow  $ \cref{spatial pooling operation}
+\end{itemize}
+
+\subsubsection{Convoluzione}\label{convolution operation}
+Una rete neurale che in almeno un layer effettua operazioni di convoluzione è detta \textit{convolutional neural network} (CNN). Le CNN sono particolarmente efficaci per l'elaborazione di dati con struttura a griglia, come le immagini. La convoluzione in due dimenzioni è così definita:
+\begin{definizione}{Convoluzione discreta 2d}
+	La convoluzione in due dimenzioni è così definita:
+	\[
+		S(i, j) = (I * K)(i, j) = \sum_{m}\sum_{n} I(m, n) K(i - m, j - n)
+	\]
+	Dove $ m $ e $ n $ vengono scelti in modo tale che $ I(m,n) $ e $ K(i-m, j-n) $ siano definiti.
+\end{definizione}
+Si noti che secondo questa definizione il kernel $ K $ viene "ribaltato"(\textit{flipping}) prima di essere applicato all'immagine $ I $.
+
+\subsubsection{Operazioni non lineari}\label{non linear operations}
+Una qualsiasi operazione non lineare può essere applicata dopo la convoluzione. Queste operazioni vengono applicate elemento per elemento. Ad esempio, in una griglia di pixel, posso applicare una operazioni non lineari ad ogni pixel individualmente, senza che questa abbia effetto sui suoi vicini. Un esempio di operazione non linare può essere
+\[
+	h(x) = \max(0, x)
+\]
+
+\subsubsection{Operazioni di spatial pooling}\label{spatial pooling operation}
+Lo spatial pooling è una tecnica utilizzata nelle reti neurali convoluzionali per ridurre la dimensionalità spaziale delle rappresentazioni intermedie, mantenendo le informazioni più rilevanti. Le operazioni di pooling vengono applicate su piccole regioni dell'immagine o della mappa delle caratteristiche, aggregando i valori all'interno di queste regioni in un singolo valore rappresentativo. Un esempio classico è il \textit{max-pooling} nelle immagini:
+\begin{center}
+	\includegraphics[width=0.7\textwidth]{images/max-pooling.png }
+\end{center}
+Il pooling è importante perché permette di ridurre la dimensionalità dei dati, diminuendo il numero di parametri e computazioni nella rete neurale. Questo oltre che ammortizzarne la complessità computazionale, aiuta a prevenire l'overfitting e rende la rete più robusta a piccole traslazioni o distorsioni nei dati di input.
+\subsection{Altri reti neurali}
+Esistono molte varianti di reti neurali progettate per compiti specifici. Alcune delle più comuni includono:
+\begin{itemize}
+	\item Reti neurali ricorrenti (RNN) $ \rightarrow  $ \cref{rnn}
+	\item Autoencoders $ \rightarrow  $ \cref{autoencoders}
+\end{itemize}
+\subsubsection{Reti neurali ricorrenti (RNN)}\label{rnn}
+Le reti neurali ricorrenti (RNN) sono progettate per elaborare dati sequenziali, come testo o serie temporali. A differenza delle reti neurali tradizionali, le RNN hanno connessioni cicliche che permettono di mantenere uno stato interno, consentendo loro di "ricordare" informazioni da input precedenti nella sequenza. Questo le rende particolarmente adatte per compiti come la traduzione automatica, il riconoscimento vocale e la generazione di testo o la predizione di fotogrammi di un video
+\vskip3mm
+L'idea sta nel fatto di utilizzare l'output di un hidden layer come input per il successivo step temporale. In questo modo, l'informazione può essere mantenuta attraverso la sequenza, e fatta crescere con l'avanzare del tempo.
+\begin{center}
+	\includegraphics[width=0.7\textwidth]{images/rnn.png }
+\end{center}
+Più formalmente, ad ogni step temporale $ t $, l'RNN aggiorna il suo stato nascosto $ h_t $ e produce un output $ y_t $ basato sull'input corrente $ x_t $ e sullo stato nascosto precedente $ h_{t-1} $:
+\[
+	h_t = f_w\left(x_t, h_{t-1}\right)
+\]
+
+
+\subsubsection{Autoencoders}\label{autoencoders}
+Eseguono riduzione della dimenzione
+\begin{center}
+	\begin{tikzpicture}
+		\node (1) at (0,0)  {dati ($x$)};
+		\node (2)[draw] at (2,0)  {encoder};
+		\node (3)[draw, ellipse] at (6,0)  {features ($ z $)};
+		\node (4)[draw] at (10,0)  {decoder};
+		\node (5) at (13,0)  {previsione ($ \hat{x} $)};
+		\draw [-latex](1)--(2);
+		\draw [-latex](2)--(3);
+		\draw [-latex](3)--(4);
+		\draw [-latex](4)--(5);
+	\end{tikzpicture}
+\end{center}
+di fatto si ha che la loss function è data da:
+\[
+	\mathcal{L} = \left(\hat{x} - x\right)^2
+\]
+dunque si allena una rete neurale per ridurre la dimensione dei dati in input e poi ricostruirli. In questo modo il layer centrale (features) conterrà una rappresentazione più compatta dei dati originali. Una volta allenata, si userà solo la prima parte (encoding), per produrre ad esempio features per un algoritmo di supervised learning
+
+\section{Modelli generativi}
+Ci sono due tipi principali di modelli generativi:
+\begin{itemize}
+	\item Modelli generativi: cerco di indovinare la distribuzione dei dati $ p_X $ o $ p_{XY} $ a seconda del fatto che abbia o meno le etichette
+	\item Modelli discriminativi: cerco la probabilità condizionata $ p_{Y|X} $ per classificare i dati (l'otput è una stima probabilistica della label data l'input)
+\end{itemize}
+I modelli discriminativi possono essere creati a partire da modelli generativi usando il teorema di Bayes:
+\[
+	p_{Y|X}(y \mid x) = \frac{p_{XY}(x, y)}{\sum_{y'} p_{XY}(x, y')}
+\]
+\subsection{Density estimation}
+Un problema di stima della densità è il seguente:
+\begin{definizione}{Density estimation - explicit}
+	Un problema di stima della densità esplicito consiste nel seguente:
+	\begin{center}
+		\textit{
+			Trova una distribuzione di probabilità $f \in \Delta(\mathcal{Z})$ che si adatti ai dati, dove $z \in \mathcal{Z}$ è campionato da una distribuzione dei dati sconosciuta $p_{\text{data}} \in \Delta(\mathcal{Z})$.
+		}
+		dove
+		\[
+			\begin{cases}
+				\mathcal{Z} = X \times Y & \text{with labels (supervised learning)}      \\
+				\mathcal{Z} = X          & \text{without labels (unsupervised learning)}
+			\end{cases}
+		\]
+	\end{center}
+
+\end{definizione}
+\begin{definizione}{Density estimation - implicit}
+	Un problema di stima della densità implicito consiste nel seguente:
+	\begin{center}
+		\textit{
+			Dato uno spazio $ \Omega $ e uno spazio $ \mathcal{Z} $, distribuiti rispettivamente secondo le distribuzioni $ p_{w} \in \Delta\left( \Omega \right) $ e $ p_{\operatorname{data}} \in \Delta \left(\mathcal{Z}\right) $, trovare una funzione $ f \in \mathcal{Z}^{\Omega} $ in maniera tale che i campioni generati $ f\left(z\right) $ siano distribuiti secondo $ p_{\operatorname{data}} $
+		}
+	\end{center}
+	\[
+		\begin{cases}
+			\mathcal{Z} = X \times Y & \text{with labels (supervised learning)}      \\
+			\mathcal{Z} = X          & \text{without labels (unsupervised learning)}
+		\end{cases}
+	\]
+\end{definizione}
+In entrambi i problemi l'obiettivo è quello di minimizzare la distanza fra la distribuzione dei dati e quella generata, ad esempio usando la distanza di Kullback-Leibler:
+\[
+	d_{KL}\left(p, q\right) = \mathbb{E}_{x \sim p}\left[\log \frac{p\left(x\right)}{q\left(x\right)}\right]
+\]
+Il problema di minimizzazione è quindi dato da
+\[
+	q^\star \in \arg\min_{q \in \mathcal{H}} d(p_{\text{data}}, q)
+\]
+
+
+\subsection{VAE}
+Un autoencoder può effetuare dimensionality reductioncome segue:
+\[
+	x \rightarrow \omega \rightarrow \hat{x}
+\]
+l'obiettivo è quindi diminuire la dimenzione di $ x $ e poi ricostruirla cercando di diminuire l'errore nella ricostruzione. Per generare nuovi dati potrei pensare di generare casualmente delle $ \omega  $ e poi decondificarle, ma questo non porterebbe a risultati utili, in quanto verrebbe prodotto rumore
+\begin{center}
+	\includegraphics{images/implicit density estimation.pdf }
+\end{center}
+L'idea è quindi di creare un decoder che ritorni una funzione di probabilità, non un dato certo. In questo modo possiamo esprimere la densità dello spazio reale $ p_{\text{data}} $ come una marginalizzazione della distribuzione latente $ p_\omega $:
+\[
+	q_\theta(x) = \mathbb{E}_{\omega \sim p^\omega} \left[ q_\theta(x \mid \omega) \right]
+\]
+dove la distribuzione $ q_\theta(x \mid \omega) $ è l'otput del decode e la distribuzione $ p^{w} $ è scelta a priori (\textit{prior}, solitamente gaussiana).
+\vskip3mm
+Il problema di minimizzazione diventa dunque la ricerca di $ \theta $ tale che la distanza della distribuzione generata sia minima rispetto a quella effettiva:
+\[
+	\theta^\star \in \arg\min_{\theta \in \Theta} d\big(q_\theta, p_\text{data}\big)
+\]
+dove la distanza $ d $ è solitamente la distanza di Kullback-Leibler:
+\[
+	d_{KL}\left(p, q\right) = \mathbb{E}_{x \sim p}\left[\log \frac{p\left(x\right)}{q\left(x\right)}\right]
+\]
+
+\begin{align*}
+	d_{\mathrm{KL}}\left(p_{\text{data}}, q_\theta\right)
+	 & = \mathbb{E}_{x\sim p_{\text{data}}} \left[ \log \frac{p_{\text{data}}(x)}{q_\theta(x)} \right]                                        \\
+	 & = - \mathbb{E}_{x\sim p_{\text{data}}} \left[ \log q_\theta(x) \right] + \text{const}                                                  \\
+	 & = - \mathbb{E}_{x\sim p_{\text{data}}} \left[ \log \mathbb{E}_{\omega\sim p^\omega} [ q_\theta(x \mid \omega) ] \right] + \text{const}
+\end{align*}
+
+Sia $q_\psi(\omega \mid x) \in \Delta(\Omega)$ una distribuzione di probabilità, ossia quella generata da un encoder, che rappresenta una stima della distribuzione latente $ p_\omega $ data l'osservazione $ x $. Utilizzando l'\textit{ineguaglianza di Jensen}, possiamo derivare un limite inferiore per il termine $ \log \mathbb{E}_{\omega \sim p_\omega} [q_\theta(x \mid \omega)] $:
+
+\begin{align*}
+	\log \mathbb{E}_{\omega \sim p_\omega} [q_\theta(x \mid \omega)]
+	 & = \log \mathbb{E}_{\omega \sim q_\psi(\cdot \mid x)} \left[ q_\theta(x \mid \omega) \frac{p_\omega(\omega)}{q_\psi(\omega \mid x)} \right] \\[2ex]
+	 & \geq \mathbb{E}_{\omega \sim q_\psi(\cdot \mid x)} \left[
+		\log \left(
+		q_\theta(x \mid \omega) \frac{p_\omega(\omega)}{q_\psi(\omega \mid x)}
+		\right)
+	\right]                                                                                                                                       \\[2ex]
+	 & = \mathbb{E}_{\omega \sim q_\psi(\cdot \mid x)} \left[ \log q_\theta(x \mid \omega) \right]
+	- d_{\mathrm{KL}}(q_\psi(\cdot \mid x),\, p_\omega)
+\end{align*}
+Si noti che il primo passaggio è vero in quanto:
+\[
+	\mathbb{E}_{p} \left[f \left(\omega\right)\right]
+	= \int f \left(\omega\right)\, p \left(\omega\right)\, d\omega
+	= \int f \left(\omega\right)\, \frac{p \left(\omega\right)}{q \left(\omega\right)}\, q \left(\omega\right)\, d\omega
+	= \mathbb{E}_{q} \left[ f \left(\omega\right)\, \frac{p \left(\omega\right)}{q \left(\omega\right)} \right]
+\]
+
+La formula finale da inserire dentro al problema di ottimizzazione è dunque:
+\[
+	d_{\mathrm{KL}} \left(p_{\text{data}}, q_{\theta}\right)
+	\le \mathbb{E}_{x \sim p_{\text{data}}} \left[
+	-\mathbb{E}_{\omega \sim q_{\psi} \left(\cdot \mid x\right)} \left[ \log q_{\theta} \left(x \mid \omega\right) \right]
+	+ d_{\mathrm{KL}} \left( q_{\psi} \left(\cdot \mid x\right), p_{\omega} \right)
+	\right] + \text{const}
+\]
+dove
+\begin{itemize}
+	\item $\mathbb{E}_{\omega \sim q_{\psi} \left(\cdot \mid x\right)} \left[ \log q_{\theta} \left(x \mid \omega\right) \right] $ è detto \textit{fattore di ricostruzione} in quanto promuove la generazione di immagini ricostruire simili a quelle reali in $ p_{\text{data}} $. \textit{Intractable}
+	\item $	d_{\mathrm{KL}} \left( q_{\psi} \left(\cdot \mid x\right), p_{\omega} \right) $ è detto \textit{fattore di regolarizzazione} in quanto spinge la distribuzione latente $ q_\psi(\cdot \mid x) $ ad essere simile alla distribuzione a priori $ p_\omega $. Ha una \textit{soluzione chiusa}
+\end{itemize}
+Dunque la funzione da minimizzare è data da:
+\begin{tcolorbox}
+	\[
+		\theta^{\star} \in \operatorname{arg\,min}_{\theta}\;
+		\mathbb{E}_{x \sim p_{\text{data}}} \big[
+		-\mathbb{E}_{\omega \sim q_{\psi} \left(\cdot \mid x\right)} \left[ \log q_{\theta} \left(x \mid \omega\right) \right]
+		+ d_{\mathrm{KL}} \left( q_{\psi} \left(\cdot \mid x\right), p_{\omega} \right) \big]
+	\]
+\end{tcolorbox}
+
+\subsubsection{Conditional VAE}
+Se avessi delle labels, la formulazione matematica rimane simile, ma con la differenza che ora la distribuzione latente $ q_\psi(\cdot \mid x) $ e la distribuzione generativa $ q_\theta(x \mid \omega) $ dipendono anche dalla label $ y $:
+\begin{itemize}
+	\item \textit{Distribuzione latente}: $ q_\psi\left(\cdot \mid x, y\right)  $
+	\item \textit{Distribuzione generativa} $ q_\theta \left(x \mid w, y\right)  $
+\end{itemize}
+\subsubsection{Problemi}
+Anche se ora sono entrambi risolti, le VAE hanno due problemi principalmente:
+\begin{itemize}
+	\item \textit{Underfitting}: il regolarizzatore è troppo forte all'inizio dell'allenamento e spinge la distribuzione latente ad essere troppo simile alla distribuzione a priori, impedendo al modello di apprendere una rappresentazione utile dei dati
+	\item \textit{Blurry samples}: il generatore tende a produrre campioni sfocati, soprattutto quando la distribuzione dei dati è complessa e multimodale. Questo accade perché il modello cerca di mediare tra le diverse modalità della distribuzione, risultando in campioni che non rappresentano fedelmente nessuna delle modalità presenti nei dati reali.
+\end{itemize}
+
+\subsection{GAN}
+I GAN permettono la stima implicita di densità. Supponiamo di avere una funzione di densità \textit{a priori} $ p_w \in \Delta \left(\Omega \right) $ e uno spazio di valori reali $ \mathcal{X} $. Noi vogliamo trovare un mapping fra $ \Omega  $ e $ \mathcal{X} $, ossia una funzione $ g_\theta \in \Delta \left(\Omega \right)  $ tale per cui la distribuzione indotta dai campioni generati da questa funzione sia il più simile possibile a quella di $ \mathcal{X} $, ossia $ p_{\text{data}} $
+\vskip3mm
+La distribuzione indotta da $ g_\theta $ è data da:
+\[
+	q_{\theta }\left(x\right) = \mathbb{E}_{\omega  \sim p^{\omega }} \delta\left(g_\theta \left(\omega \right) - x \right)
+\]
+dove $ \delta  $ è la \textit{delta di dirac}. Si noti come questa vada a selezionare solo i valori di $ \omega  $ che vengono mandati in $ x $ dalla funzione $ g_\theta \left(\omega \right) - x  $. Quindi intuitivamente, $ q_{\theta }\left(x\right) $ è dato dalla media delle probabilità delle $ \omega   $ che vengono mandate in $ x $ dal generatore
+\vskip3mm
+Il problema risulta quindi quello di minimizzare la distanza fra $ q_\theta $ e $ p_{\text{data}} $:
+\[
+	\theta^{\star} \in \operatorname*{arg\,min}_{\theta}\; d_{\mathrm{JS}} \left(p_{\text{data}},\, q_{\theta}\right)
+\]
+sta volta, non useremo la \textit{Kullback-Lieber} distance, ma la distanza di \textit{Jensen-Shannon}, definita come:
+\[
+	\begin{aligned}
+		d_{\mathrm{JS}} \left(p,q\right)
+		 & = \tfrac{1}{2}\, d_{\mathrm{KL}} \left(p,\, \tfrac{p+q}{2}\right)
+		+ \tfrac{1}{2}\, d_{\mathrm{KL}} \left(q,\, \tfrac{p+q}{2}\right)                      \\[8pt]
+		 & = \tfrac{1}{2}\,\mathbb{E}_{x \sim p} \left[ \log \frac{2\,p(x)}{p(x)+q(x)} \right]
+		+ \tfrac{1}{2}\,\mathbb{E}_{x \sim q} \left[ \log \frac{2\,q(x)}{p(x)+q(x)} \right]    \\[8pt]
+		 & = \tfrac{1}{2}\,\mathbb{E}_{x \sim p} \left[ \log \frac{p(x)}{p(x)+q(x)} \right]
+		+ \tfrac{1}{2}\,\mathbb{E}_{x \sim q} \left[ \log \frac{q(x)}{p(x)+q(x)} \right]
+		+ \log \left(2\right)                                                                  \\[8pt]
+		 & = \log \left(2\right) + \tfrac{1}{2}\, \max_{t}
+		\left\{ \mathbb{E}_{x \sim p} \left[ \log t(x) \right]
+		+ \mathbb{E}_{x \sim q} \left[ \log \left(1 - t(x)\right) \right] \right\}
+	\end{aligned}
+\]
+Si può dimostrare che la funzione $ t $ che massimizza il secondo termine è data da:
+\[
+	t\left(x\right) = \frac{p\left(x\right)}{ p\left(x\right) + q\left(x\right)}
+\]
+per questo vale l'equivalenza fra le ultime due righe
+
+\[
+	d_{\mathrm{JS}} \left(p_{\text{data}},\, q_{\theta}\right)
+	= \log \left(2\right)
+	+ \tfrac{1}{2}\, \max_{t}
+	\left\{
+	\mathbb{E}_{x \sim p_{\text{data}}} \left[\log t(x)\right]
+	+
+	\mathbb{E}_{x \sim q_{\theta}} \left[\log \left(1 - t(x)\right)\right]
+	\right\}
+\]
+Quindi il problema di ottimizzazione diventa:
+\[
+	\theta^{\star} \in \operatorname*{arg\,min}_{\theta}\;
+	\max_{\phi}
+	\left\{
+	\mathbb{E}_{x \sim p_{\text{data}}} \left[\log t_{\phi}(x)\right]
+	+
+	\mathbb{E}_{x \sim q_{\theta}} \left[\log \left(1 - t_{\phi}(x)\right)\right]
+	\right\}
+\]
+anche se dipendo ancora dalla esplicita funzione di densità $ q_{\theta} $, che non possono conoscere. Posso tuttavia applicare la funzione generatrice sugli elementi di $ \Omega  $, ottenendo:
+\begin{tcolorbox}
+	\[
+		\theta^{\star} \in \operatorname*{arg\,min}_{\theta}\;
+		\max_{\phi}
+		\left\{
+		\mathbb{E}_{x \sim p_{\text{data}}} \left[\log t_{\phi}(x)\right]
+		+
+		\mathbb{E}_{\omega \sim p^{\omega}} \left[\log \left(1 - t_{\phi}(g_{\theta }\left(\omega \right))\right)\right]
+		\right\}
+	\]
+\end{tcolorbox}
+\subsubsection{Problemi}
+\begin{itemize}
+	\item \textit{Training stability}: i parametri potrebbero oscillare e non convergere mai
+	\item \textit{Mode collapse}: il generatore potrebbe imparare a generare perfettamente pochi esempi del training set
+	\item \textit{Vanishing gradient}: se il discriminatore è molto efficace, lascia al generatore poco gradiente da cui imparare
+\end{itemize}
+
+\section{Diffusion models}
+L'idea alla base dei diffusion models è quella di imparare a generare dati partendo da rumore puro, invertendo un processo di diffusione che aggiunge rumore ai dati reali. In questo modo, il modello impara a ricostruire i dati originali a partire da una rappresentazione altamente rumorosa, consentendo la generazione di nuovi campioni che seguono la stessa distribuzione dei dati di addestramento.
+\vskip3mm
+\sfblue{Processo di diffusione}: il processo di diffusione è un processo stocastico che aggiunge rumore ai dati reali in modo iterativo. A ogni passo del processo, viene aggiunta una piccola quantità di rumore gaussiano ai dati, rendendoli progressivamente più rumorosi. Matematicamente, il processo di diffusione può essere descritto come segue:
+\[
+	q(x_t \mid x_{t-1}) = \mathcal{N}(\sqrt{1 - \beta_t} \, x_{t-1}, \beta_t \mathbf{I}) \implies q(x_{1:T} \mid x_0) = \prod_{t=1}^{T} q(x_t \mid x_{t-1})
+\]
+
+La formula si può anche scrivere con "accesso casuale", quindi senza che questa crei una catena di Markov, ma direttamente con $ x_0 $ e $ x_t $. Definiamo innanzitutto il coefficiente $ \overline{\alpha}_t $ ausiliario
+\[
+	\alpha_t = (1 - \beta_t) \implies \bar{\alpha}_t = \prod_{s=1}^{t} (1 - \beta_s)
+\]
+Allora otteniamo che
+\[
+	q(x_t \mid x_0) = \mathcal{N}\left(\sqrt{\bar{\alpha}_t} \, x_0,\; (1 - \bar{\alpha}_t)\mathbf{I}\right)
+\]
+possiamo sfruttare la proprietà delle gaussiane per il campionamento. Data una gaussiana $ z \sim \mathcal{N}\left(\mu , \sigma^2 \right) $, allora posso campionare $ z $ come segue:
+\[
+	z = \mu  + \sigma \cdot \epsilon, \quad \text{dove } \epsilon \sim \mathcal{N}(0, 1)
+\]
+quindi per campionare $ x_t $ da $ q(x_t \mid x_0) $, posso campionare $ \epsilon \sim \mathcal{N}(0, 1) $ e poi calcolare
+\[
+	x_t = \sqrt{\bar{a}_t}x_0 + \sqrt{1 - \bar{a}_t} \epsilon, \quad \text{dove } \epsilon \sim \mathcal{N}(0, 1)
+\]
+
+\sfblue{Processo di denoising}: il processo di denoising è l'inverso del processo di diffusione. A ogni passo del processo di denoising, viene rimosso una piccola quantità di rumore dai dati rumorosi, avvicinandoli progressivamente ai dati originali. Matematicamente, il processo di denoising può essere descritto come segue:
+
+\[
+	p(x_T) \sim \mathcal{N}(0, \mathbf{I})
+\]
+
+\[
+	p_\theta(x_{t-1}\mid x_t) \sim \mathcal{N}\left(\underbracket[0.1ex]{\mu_\theta(x_t, t)}_{\text{nn learn}},\, \sigma_t^2 \mathbf{I}\right)
+\]
+
+\[
+	p_\theta(x_{0:T}) = p(x_T) \prod_{t=1}^T p_\theta(x_{t-1}\mid x_t)
+\]
+Si noti che qui la probabilità è parametrizzata secondo i parametri $ \theta $ di una rete neurale, che impara a stimare la media della distribuzione gaussiana che rappresenta il processo di denoising. Il processo di denoising viene addestrato minimizzando la distanza tra la distribuzione generata e quella dei dati reali, ad esempio usando la distanza di Kullback-Leibler:
+
+\vskip3mm
+\sfblue{Loss}: è necessario come in qualsiasi algoritmo di machine learning definire una loss da minimizzare. In questo caso, la loss è data dalla distanza di Kullback-Leibler tra la distribuzione generata dal processo di denoising e quella dei dati reali:
+% \[
+% 	L = \mathbb{E}_{q(x_0)} \left[ -\log p_\theta(x_0) \right] \leq \mathbb{E}_{q(x_0)q(x_{1:T}|x_0)} \left[ -\log \frac{p_\theta(x_{0:T})}{q(x_{1:T}|x_0)} \right]
+% \]
+\[
+	L = \mathbb{E}_{x \sim q(x_0)} \left[ -\log p_\theta(x) \right]
+\]
+Tramite passaggi matematici, è possibile dimostrare che la loss da minimizzare è data da:
+\[
+	L_{\text{simple}} =
+	\mathbb{E}_{x_0 \sim q(x_0),\; \epsilon \sim \mathcal{N}(0, \mathbf{I}),\; t \sim \mathcal{U}(1, T)}
+	\left[
+		\left\| \epsilon - \epsilon_\theta \left(
+		\sqrt{\bar{\alpha}_t} x_0 + \sqrt{1 - \bar{\alpha}_t} \epsilon,\; t
+		\right) \right\|^2
+		\right]
+\]
+\subsection{Training}
+\begin{algoritmo}{Training/inference diffusion models}
+	\begin{algorithm}[H]
+		\SetKwFunction{Train}{train}
+		\SetKwFunction{Infer}{infer}
+
+		\Fn{\Train{}}{
+			\Repeat{converged}{
+				$x_0 \sim q(x_0)$\;
+				$t \sim \text{Uniform}(\{1, \ldots, T\})$\;
+				$\epsilon \sim \mathcal{N}(0, \mathbf{I})$\;
+				\Comment{Aggiorna $\theta$ con un passo di gradient descent}
+				$ \nabla_\theta \|\epsilon - \epsilon_\theta(\sqrt{\bar{\alpha}_t} x_0 + \sqrt{1 - \bar{\alpha}_t} \epsilon,\ t)\|^2$\;
+			}
+		}
+
+		\vskip3mm
+
+		\Fn{\Infer{}}{
+			$x_T \sim \mathcal{N}(0, \mathbf{I})$\;
+			\For{$t = T$ \KwTo $1$}{
+				$z \sim \mathcal{N}(0, \mathbf{I})$\;
+				$x_{t-1} = \frac{1}{\sqrt{\alpha_t}}\left(x_t - \frac{1 - \alpha_t}{\sqrt{1 - \bar{\alpha}_t}} \epsilon_\theta(x_t, t)\right) + \sigma_t z$\;
+			}
+			\Return $x_0$\;
+		}
+	\end{algorithm}
+\end{algoritmo}
+
+\subsection{U-net}
+La U-NET è una particolare architettura di rete neurale convoluzionale progettata inizialmente per la segmentazione di immagini biomediche (ossia ad esempio analisi e classificazione tessuti, rilevamento tumori, ...). Ha due parti principali:
+\begin{itemize}
+	\item \textit{Encoder}: questa parte della rete è responsabile dell'estrazione delle caratteristiche dall'immagine di input. Consiste in una serie di strati convoluzionali e di pooling che riducono progressivamente la dimensione spaziale dell'immagine, aumentando al contempo la profondità dei canali di feature.
+	\item \textit{Decoder}: ripristina la risoluzione originale usando up-convolutions (o transposed convolutions) e combina le informazioni globali con dettagli locali (grazie ai “salti” laterali di connessione, skip connections).
+\end{itemize}
+Le caratteristiche principali della U-NET includono:
+\begin{itemize}
+	\item \textit{Fully convolutional}: non contiene strati completamente connessi, il che la rende adatta a lavorare con immagini di dimensioni variabili.
+	\item \textit{Skip connections}: permettono di mantenere dettagli fini durante la ricostruzione/fase di upsampling.
+\end{itemize}
+I motivi principali per cui vengono usate come cuore nella fase di denoising dei diffusion models sono:
+\begin{itemize}
+	\item Skip connections consentono di catturare sia informazioni globali che dettagli locali nell'immagine; aiutano a "recuperare" dettagli precisi persi nei passaggi di compressione, cosa fondamentale per la qualità visiva delle immagini generate o denoise.
+	\item Robusta, efficiente, e ampiamente studiata
+\end{itemize}
+
+\subsection{Altre tecniche avanzate}
+Come ogni tennologia, anche i diffusion models hanno subito numerose evoluzioni e miglioramenti. Di seguito sono riportate alcune delle tecniche avanzate più rilevanti
+
+\subsubsection{Diffusion GANs}
+I \textit{Diffusion GANs} sono una variante dei modelli di diffusione (diffusion models) che combina i punti di forza dei GAN (Generative Adversarial Networks) e dei modelli di diffusione.
+Nel diffusion GAN, il processo di denoising non è più modellato solo come una gaussiana semplice (\textit{unimodale}), ma tramite una distribuzione più complessa, appresa grazie a un GAN condizionale.
+\vskip3mm
+I diffusion models standard assumono che, a ogni step, il rumore venga rimosso con una gaussiana. Questa ipotesi va bene per passi molto piccoli (pochi cambiamenti), dunque servono migliaia di step per generare immagini realistiche. Per questo i diffusion GANs sono stati sviluppati per venire in contro alle seguenti esigenze:
+\begin{itemize}
+	\item Ridurre il numero di passi necessari per la sintesi (generazione) dell’immagine
+	\item Gestire tipi di rumore/denoising più complessi
+	\item Accelerare la generazione senza sacrificare la qualità
+\end{itemize}
+
+Rispetto ad un GAN normale, ho i seguenti vantaggi:
+\begin{itemize}
+	\item \textit{Problema più semplice}: Sia il generatore che il discriminatore affrontano problemi meno difficili, perché operano su step locali nella catena di diffusione.
+	\item \textit{Stronger mode coverage}: La generazione copre meglio tutte le possibili forme e varianti dei dati: il GAN può apprendere anche distribuzioni multimodali.
+	\item \textit{Better training stability}: L’addestramento risulta più stabile rispetto a un GAN tradizionale, che tende a soffrire di "mode collapse" o instabilità.
+\end{itemize}
+
+\subsubsection{Distillazione}
+Nel processo di denoising in una diffusion model, è necessario eseguire un numero elevato di passi (tipicamente migliaia) per ottenere risultati di alta qualità. Questo può essere computazionalmente costoso e lento. La distillazione è una tecnica che consente di ridurre il numero di passi necessari per la generazione, mantenendo comunque una buona qualità dell'immagine. L'idea è quella di addestrare un modello più piccolo (il "distillato" o student) a imitare il comportamento del modello originale (il "teacher") con meno passi, accelerando così il processo di generazione. Questa procedura può essere re iterata (facendo diventare gli student i nuovi teachers)
+
+\subsubsection{Latent space diffusion models}
+L'idea è quella di combinare i VAE con i diffusion models per sfruttare i vantaggi di entrambi. In questo approccio, il VAE viene utilizzato per creare uno spazio latente compatto e strutturato, mentre il diffusion model viene applicato in questo spazio latente per generare nuove rappresentazioni.
+\begin{itemize}
+	\item \textit{Il VAE crea uno spazio latente}: L’encoder del \textit{VAE} trasforma i dati (ad esempio immagini) in vettori compatti z 0 che costituiscono lo spazio latente
+	\item \textit{Il diffusion model genera rappresentazioni nel latente}: Invece di generare direttamente immagini, il modello di diffusione lavora nello spazio latente e produce nuove rappresentazioni $ \omega \in  \Omega  $ (che sono punti/vettori in quello spazio)
+	\item \textit{Il VAE ricostruisce dal latente}: Il decoder del VAE prende queste rappresentazioni generate ed effettua la mappatura inversa, ricostruendo dati realistici (ad esempio immagini)
+\end{itemize}
+Vantaggi:
+
+\begin{itemize}
+	\item \textit{Latent embeddings semplici da modellare}: Lavorando in uno spazio latente (compresso, di dimensioni ridotte), sia il denoising che la sintesi diventano molto più efficienti rispetto a operare nello spazio originale ad alta dimensione (pixel per pixel).
+	\item \textit{Sintesi più veloce}: Generare in uno spazio più piccolo fa risparmiare tempo e memoria.
+	\item \textit{Augmented latent space}: Possibilità di progettare e arricchire lo spazio latente per ESIGENZE specifiche (ad esempio aggiungendo attributi, vettori di testo, etc.).
+	\item \textit{Autoencoder adattivi}: Puoi adattare l’autoencoder a diversi tipi di dati (immagini, testi, grafi, dati 3D...).
+\end{itemize}
+
+\subsubsection{Text to image diffusion models}
+L'idea è di poter iniettare del testo per condizionare la generazione dell'immagine. In questo modo, è possibile generare immagini che corrispondono a descrizioni testuali specifiche, consentendo una maggiore personalizzazione e controllo sulla sintesi delle immagini.
+
+\vskip3mm
+\sfblue{Contrastive Language-Image Pretraining (CLIP)}: è una tecnica per imparare uno spazio semantico condiviso tra immagini e testo. L’obiettivo è addestrare insieme (in modo "contrastivo") un text encoder e un image encoder in modo che rappresentazioni vettoriali (\textit{embedding}) di testo e immagini "corrispondenti" siano vicine, mentre quelle non corrispondenti siano distanti nello spazio vettoriale.
+
+\vskip3mm
+\sfblue{Glide}: è una tecnica che utilizza un modello di diffusione per generare immagini a partire da descrizioni testuali. Glide sfrutta un modello di diffusione condizionale, in cui il processo di denoising è guidato dalle rappresentazioni testuali ottenute da un encoder (ad esempio CLIP). In questo modo, il modello può generare immagini che corrispondono alle descrizioni fornite, consentendo una maggiore personalizzazione e controllo sulla sintesi delle immagini. Formalmente, anziché avere $ p_{\theta}\left(x_{t-1} \mid x_t\right) $ avrò $ p_{\theta} \left(x_{t-1} \mid \left(x_t, y\right)\right)  $, dove $ y $ è la rappresentazione numerica del testo prompt
+
+\vskip3mm
+\sfblue{Stable diffusion}: è una tecnica di latent space diffusion che utilizza un modello di diffusione per generare immagini a partire da descrizioni testuali, operando in uno spazio latente invece che direttamente nello spazio delle immagini. Di base viene creato uno spazio latente con le embedding di CLIP, e poi viene addestrato un modello di diffusione in questo spazio latente per generare nuove rappresentazioni. Infine, un decoder (ad esempio un VAE) viene utilizzato per ricostruire le immagini a partire dalle rappresentazioni generate nel latente. Questo approccio consente di ottenere una sintesi più veloce e di alta qualità, sfruttando i vantaggi sia dei modelli di diffusione che dei VAE.
+
+\section{Reiforcement learning}
+L'idea è quella che il modello, interagendo con l'ambiente può essere ricompensato oppure punito per delle scelte prese, e che quindi possa imparare a prendere decisioni migliori nel tempo. In questo modo, il modello può imparare a risolvere compiti complessi che richiedono una sequenza di azioni, come ad esempio giocare a un videogioco, controllare un robot, o prendere decisioni in un ambiente dinamico. In ogni scenario di renforment learning ho
+\begin{itemize}
+	\item \textit{State}: stato del sistem
+	\item \textit{Actions}: azioni che posso prendere per modificare lo stato
+	\item \textit{Reward}: ricompensa che ricevo in base alle azioni che prendo
+\end{itemize}
+L'obiettivo è quello di trovare una \textit{policy} (ossia una strategia) che massimizzi la ricompensa totale nel tempo
+\subsection{Markov Decision Process (MDP)}
+
+\[
+	(\mathcal{S},\; \mathcal{A},\; \mathcal{R},\; \mathcal{P},\; \gamma)
+\]
+
+\begin{itemize}
+	\item $\mathcal{S}$: \text{set of possible states}
+	\item $\mathcal{A}$: \text{set of possible actions}
+	\item $\mathcal{R}$: \text{distribution of reward given (state, action) pair}
+	\item $\mathcal{P}$: \text{transition probability, i.e. distribution over next state given (state, action) pair}
+	\item $\gamma$: \text{discount factor}
+\end{itemize}
+Una catena di Markow può essere usata in un loop per continuare a prendeere decisioni, come segue:
+
+\begin{itemize}
+	\item Al tempo $t=0$, l'ambiente campiona lo stato iniziale $s_0 \sim p(s_0)$
+	\item Ripeti:
+	      \begin{itemize}
+		      \item L'agente seleziona un'azione $a_t$
+		      \item L'ambiente campiona la ricompensa $r_t \sim R(\cdot \mid s_t, a_t)$
+		      \item L'ambiente campiona il prossimo stato $s_{t+1} \sim P(\cdot \mid s_t, a_t)$
+		      \item L'agente riceve la ricompensa $r_t$ e il nuovo stato $s_{t+1}$
+	      \end{itemize}
+\end{itemize}
+
+Una politica $\pi(s)$ è una funzione da $\mathcal{S}$ a $\mathcal{A}$ che specifica quale azione eseguire in ogni stato. L'obiettivo è trovare una politica $\pi^*$ che massimizza la somma delle ricompense scontate cumulative.
+\begin{definizione}{Cumulative discounted reward}
+	La ricmompensa totale scontata che un agente riceve seguendo una politica $\pi$ a partire da uno stato $s$ è data da:
+	\[
+		\sum_{t \ge 0} \gamma^t r\left(s_t\right) \quad \text{ dove } 0 < \gamma \le 1
+	\]
+\end{definizione}
+Si noti come il fattore di sconto $\gamma$ riduce l'importanza delle ricompense future, rendendo più rilevanti le ricompense immediate. Inoltre si noti che:
+\begin{itemize}
+	\item Il cumulative reward è \textit{bounded} poiché la serie geometrica converge.
+	\item Il fattore di sconto $\gamma$ aiuta a garantire la convergenza dell'algoritmo di apprendimento, poiché riduce l'importanza delle ricompense future e rende il problema più gestibile.
+\end{itemize}
+
+Sono possibili due approcci principali per il Reinforcement Learning
+
+\begin{itemize}
+	\item \textit{Metodi basati sul valore}
+	      \begin{itemize}
+		      \item L’obiettivo dell’agente è ottimizzare la funzione valore $V(s)$.
+		      \item Il valore di ciascuno stato è la quantità totale di ricompensa che un agente RL si aspetta di raccogliere nel futuro a partire da uno stato dato.
+	      \end{itemize}
+	\item \textit{Approccio basato sulla policy:}
+	      \begin{itemize}
+		      \item Si definisce una policy che bisogna ottimizzare direttamente.
+		      \item La policy determina il comportamento dell’agente.
+		      \item Policy stocastica: fornisce una distribuzione di probabilità sulle diverse azioni.
+	      \end{itemize}
+	      \[
+		      \pi_\theta(s, a) \approx P(a\,|\,s)
+	      \]
+\end{itemize}
+
+\subsection{Metodo basato sul valore}
+\begin{itemize}
+	\item \textit{La funzione valore} fornisce la quantità totale di ricompensa che l'agente può aspettarsi di ottenere a partire da uno stato, sommando su tutti i possibili stati raggiungibili da quello stato. Grazie alla funzione valore si può trovare una policy.
+	\item La \textit{funzione valore} $V$ di uno stato $s$ rispetto alla policy $\pi$ è la ricompensa cumulativa attesa seguendo quella policy a partire da $s$:
+	      \[
+		      V^\pi(s) = \mathbb{E}\left[\sum_{t \geq 0} \gamma^t r(s_t) \;\bigg|\; s_0 = s, \pi \right]
+	      \]
+	      dove $a_t = \pi(s_t)$ e $s_{t+1} \sim P(\cdot|s_t, a_t)$
+
+	\item \textit{Il valore ottimale di uno stato} è il valore ottenibile seguendo la migliore policy possibile:
+	      \[
+		      V^*(s) = \max_\pi \mathbb{E}\left[\sum_{t \geq 0} \gamma^t r(s_t) \;\bigg|\; s_0 = s, \pi \right]
+	      \]
+	\item Esprime quanto “buono” è uno stato.
+\end{itemize}
+Tuttavia si è visto che è opportuno calcolare il valore di una coppia stato-azione, invece che solo dello stato. Questo perché in alcuni stati, alcune azioni potrebbero essere migliori di altre, e quindi è importante valutare la qualità di ogni azione in ogni stato. La funzione che valuta la qualità di una coppia stato-azione è chiamata \textit{funzione Q} (Q-value):
+\begin{definizione}{Q-value function}
+	La funzione Q-value indica il valore di una coppia stato-azione rispetto a una policy $\pi$. In altre parole, $Q^\pi(s, a)$ rappresenta la ricompensa cumulativa attesa che un agente riceverà seguendo la policy $\pi$ a partire dallo stato $s$ e prendendo l'azione $a$:
+	\[
+		Q^\pi(s, a) = \mathbb{E}\left[ \sum_{t \geq 0} \gamma^t\, r(s_t) \,\bigg|\, s_0 = s,\, a_0 = a,\, \pi \right]
+	\]
+\end{definizione}
+
+\begin{itemize}
+	\item La funzione Q-value ottima indica quanto è buona una coppia stato-azione, assumendo che l'agente segua la migliore policy possibile dopo aver preso l'azione $a$ nello stato $s$:
+	      \[
+		      Q^*(s, a) = \max_\pi \mathbb{E}\left[ \sum_{t \geq 0} \gamma^t\, r(s_t) \,\bigg|\, s_0 = s,\, a_0 = a,\, \pi \right]
+	      \]
+
+	\item Dalla funzione Q-value ottima, è possibile derivare la policy ottima, che indica quale azione prendere in ogni stato per massimizzare la ricompensa cumulativa attesa:
+	      \[
+		      \pi^*(s) = \arg\max_a Q^*(s, a)
+	      \]
+\end{itemize}
+
+\begin{align*}
+	Q^*(s, a) & = r(s) + \gamma \sum_{s'} P(s' | s, a) \max_{a'} Q^*(s', a')                                           \\
+	          & = \mathbb{E}_{s' \sim P(\cdot \mid s, a)} \left[ r(s) + \gamma \max_{a'} Q^*(s', a') \mid s, a \right]
+\end{align*}
+\begin{algoritmo}{Q-Learning training}
+	\begin{algorithm}[H]
+		\KwData{State space $\mathcal{S}$, action space $\mathcal{A}$, reward function $R$, discount factor $\gamma$}
+		\KwResult{Optimal Q-values $Q^*(s,a)$}
+		Initialize the $Q$ matrix with zeros\;
+		Select a random initial state $s$\;
+		\For{each episode}{
+			\While{state $s$ is not goal state}{
+				Select a random possible action $a$ for the current state $s$\;
+				Consider transition to next state $s'$ using action $a$\;
+				Get maximum $Q$ value for $s'$: $\max_{a'} Q^*(s', a')$\;
+				Update $Q^*(s,a)$: \\
+				\quad $Q^*(s,a) = R(s,a) + \gamma \max_{a'}\left[ Q^*(s', a') \right]$\;
+				Set $s \leftarrow s'$\;
+			}
+		}
+	\end{algorithm}
+\end{algoritmo}
+
+
+
+
+
+
+
+\newpage
 \section{Miscellanea nozioni}
 \subsection{Cosine distance}\label{cosine-distance}
 In alcuni casi la distanza euclidea non è adeguata per valutare quanto due vettori sono simili. Ad esempio, se classificassimo documenti sulla base delle parole contenute e avessimo:
